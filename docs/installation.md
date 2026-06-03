@@ -6,6 +6,8 @@
 - SSH access to the router
 - A Telegram account
 
+---
+
 ## Step 1 — Create a Telegram Bot
 
 1. Open Telegram and search for **@BotFather**
@@ -14,54 +16,39 @@
 
 ## Step 2 — Get Your Chat ID
 
-1. Search for **@userinfobot** on Telegram
+1. Open Telegram and search for **@userinfobot**
 2. Send `/start`
 3. Copy your **chat ID** (a number like `987654321`)
 
 ## Step 3 — Install curl
 
-`curl` is not installed by default on OpenWRT. Install it first:
+`curl` is not installed by default on OpenWRT:
 
 ```sh
 opkg update && opkg install curl
 ```
 
-> **Note:** `opkg update` requires internet access on the router (WAN connected).
-
-## Step 4 — Download the Bot
+## Step 4 — Download and Install
 
 ```sh
 cd /tmp
-curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.1.tar.gz -o bot.tar.gz
+curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/heads/main.tar.gz -o bot.tar.gz
 tar xzf bot.tar.gz
-cd OpenWRT-Telegram-Bot-0.1.1
-```
-
-> BusyBox `tar` (used on OpenWRT) does not support `--strip-components`. Download to a file first, then extract.
-
-## Step 5 — Run the Installer
-
-```sh
+cd OpenWRT-Telegram-Bot-main
 sh install.sh
 ```
 
-The installer will prompt you for:
-
-1. **Bot Token** — get it from [@BotFather](https://t.me/BotFather) (`/newbot`)
-2. **Chat ID** — get it from [@userinfobot](https://t.me/userinfobot) (`/start`)
+The installer will ask for:
+1. **Bot Token** — from @BotFather
+2. **Chat ID** — from @userinfobot
 3. **Run mode** — `d` for daemon (recommended) or `c` for cron
 
-Then it will:
-- Copy scripts to `/usr/lib/telegram-bot/`
-- Write config to `/etc/config/telegram-bot` (chmod 600)
-- Set up the service or cron job
-
-## Step 6 — Test
+## Step 5 — Test
 
 Send `/start` to your bot on Telegram. You should receive the welcome message.
 
 ```sh
-# Check logs if something doesn't work
+# View logs
 logread -e telegram-bot
 ```
 
@@ -69,83 +56,70 @@ logread -e telegram-bot
 
 ## Updating
 
-When a new version is released, download it and run:
+Download the latest version and run `update` — your config is preserved:
 
 ```sh
 cd /tmp
-curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/vX.Y.Z.tar.gz -o bot.tar.gz
+curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/heads/main.tar.gz -o bot.tar.gz
 tar xzf bot.tar.gz
-cd OpenWRT-Telegram-Bot-X.Y.Z
+cd OpenWRT-Telegram-Bot-main
 sh install.sh update
 ```
 
-This updates the scripts while **preserving your existing config** (token, chat ID, blocked devices, speed limits).
-
 ## Reconfiguring
 
-To change your token, chat ID, or run mode without reinstalling:
+Change token, chat ID, or run mode without reinstalling:
 
 ```sh
-sh /usr/lib/telegram-bot/../install.sh reconfigure
+sh /usr/lib/telegram-bot/install.sh reconfigure
 ```
 
-Or directly from a previously downloaded copy:
+## Uninstalling
 
 ```sh
-sh install.sh reconfigure
+sh /usr/lib/telegram-bot/uninstall.sh
 ```
+
+---
 
 ## Run Modes
 
-### Daemon (recommended)
-
-The bot runs as a persistent background service managed by procd:
+| Mode | How it works | Response time |
+|------|-------------|---------------|
+| **daemon** (recommended) | Runs as a persistent service (procd) | ~2 seconds |
+| **cron** | Runs once per minute via cron | up to 60 seconds |
 
 ```sh
-/etc/init.d/telegram-bot status
+# Daemon: start / stop / restart
+/etc/init.d/telegram-bot start
+/etc/init.d/telegram-bot stop
 /etc/init.d/telegram-bot restart
 ```
 
-Response time: ~2 seconds.
-
-### Cron
-
-The bot runs every minute via cron:
-
-```sh
-crontab -l | grep telegram
-```
-
-Response time: up to 60 seconds.
+---
 
 ## Manual Configuration
 
-Config is stored in UCI format at `/etc/config/telegram-bot`:
+Config is stored at `/etc/config/telegram-bot`:
 
 ```sh
-# View current config (token is hidden)
+# View current config
 uci show telegram-bot
 
-# Change poll interval
+# Change a value
 uci set telegram-bot.bot.poll_interval=15
 uci commit telegram-bot
-
-# Toggle alerts
-uci set telegram-bot.bot.alerts=0
-uci commit telegram-bot
+/etc/init.d/telegram-bot restart
 ```
 
-## Uninstall
+See [configuration.md](configuration.md) for all available options.
 
-```sh
-sh /tmp/bot/uninstall.sh
-```
+---
 
 ## Tested Hardware
 
 | Router | OpenWRT | Status |
 |--------|---------|--------|
 | Xiaomi AX3000T (RD03) | 24.10.2 | ✅ Tested |
-| Generic (MT7981) | 23.05+ | ✅ Expected to work |
 
 Contributions for other hardware are welcome!

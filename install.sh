@@ -118,7 +118,10 @@ _copy_files() {
     cp "${SCRIPT_DIR}/src/modules/devices.sh"    "${INSTALL_DIR}/modules/devices.sh"
     cp "${SCRIPT_DIR}/src/modules/bandwidth.sh"  "${INSTALL_DIR}/modules/bandwidth.sh"
 
-    chmod +x "${INSTALL_DIR}/bot.sh"
+    # Keep install/uninstall scripts accessible after download folder is gone
+    cp "${SCRIPT_DIR}/install.sh"   "${INSTALL_DIR}/install.sh"
+    cp "${SCRIPT_DIR}/uninstall.sh" "${INSTALL_DIR}/uninstall.sh"
+    chmod +x "${INSTALL_DIR}/bot.sh" "${INSTALL_DIR}/install.sh" "${INSTALL_DIR}/uninstall.sh"
     _info "Scripts installed"
 }
 
