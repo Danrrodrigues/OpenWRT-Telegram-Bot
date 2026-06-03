@@ -132,7 +132,7 @@ _bot_send_help() {
 }
 
 _bot_process_updates() {
-    local offset count i update_id chat_id text last_id
+    local offset count i chat_id text last_id
     if [ -f "$OFFSET_FILE" ]; then
         read -r offset < "$OFFSET_FILE" || offset=0
     else
@@ -148,7 +148,6 @@ _bot_process_updates() {
 
     i=0
     while [ "$i" -lt "$count" ]; do
-        update_id=$(telegram_update_field "$i" "update_id")
         chat_id=$(telegram_update_field "$i" "message.chat.id")
         text=$(telegram_update_field "$i" "message.text")
 
