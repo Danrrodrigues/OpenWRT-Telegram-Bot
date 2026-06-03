@@ -31,13 +31,12 @@ opkg update && opkg install curl
 ## Step 4 — Download the Bot
 
 ```sh
-mkdir -p /tmp/bot
-curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.0.tar.gz \
-  | tar xz --strip-components=1 -C /tmp/bot
-cd /tmp/bot
+cd /tmp
+curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.0.tar.gz | tar xz
+cd OpenWRT-Telegram-Bot-0.1.0
 ```
 
-> `--strip-components=1` extracts directly into `/tmp/bot` regardless of the archive's internal folder name.
+> GitHub strips the `v` from tag names in archive folders — the directory will be `OpenWRT-Telegram-Bot-0.1.0`, not `v0.1.0`.
 
 ## Step 5 — Run the Installer
 
@@ -53,7 +52,7 @@ The installer will:
 - Write config to `/etc/config/telegram-bot` (with restricted permissions)
 - Set up the service or cron job
 
-## Step 5 — Test
+## Step 6 — Test
 
 Send `/start` to your bot on Telegram. You should receive the welcome message.
 

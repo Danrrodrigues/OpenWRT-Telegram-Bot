@@ -41,10 +41,9 @@ ssh root@192.168.1.1
 opkg update && opkg install curl
 
 # 3. Download
-mkdir -p /tmp/bot
-curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.0.tar.gz \
-  | tar xz --strip-components=1 -C /tmp/bot
-cd /tmp/bot
+cd /tmp
+curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.0.tar.gz | tar xz
+cd OpenWRT-Telegram-Bot-0.1.0
 
 # 4. Install
 sh install.sh
