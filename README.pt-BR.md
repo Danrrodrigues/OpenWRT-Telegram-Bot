@@ -140,6 +140,7 @@ Veja todas as opções em [docs/configuration.md](docs/configuration.md).
 
 ## Mudancas Recentes
 
+- `v0.2.2` — Corrige todos os avisos do shellcheck no projeto (bugs reais de `A && B || C`, `echo -n` não-POSIX, código de teste morto), fixa o shellcheck do CI na v0.11.0 para casar com o hook de pre-push local e adiciona um hook de pre-push que roda o shellcheck antes do push.
 - `v0.2.1` — Adiciona modos de alerta (`off|known|unknown|all`), detecção ativa de presença Wi-Fi para alertas de reconexão, `/name <MAC> <hostname>`, prioridade para nome estático do OpenWRT e a correção do instalador para `core/device_identity.sh`.
 
 ---

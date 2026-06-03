@@ -140,6 +140,7 @@ See [docs/configuration.md](docs/configuration.md) for all options.
 
 ## Changelog
 
+- `v0.2.2` — Fixed all shellcheck warnings across the codebase (real `A && B || C` bugs, non-POSIX `echo -n`, dead test code), pinned CI shellcheck to v0.11.0 to match the local pre-push hook, and added a pre-push hook that runs shellcheck before pushing.
 - `v0.2.1` — Added device alert modes (`off|known|unknown|all`), active Wi-Fi presence detection for reconnect alerts, `/name <MAC> <hostname>`, static OpenWRT hostname priority, and the installer fix for `core/device_identity.sh`.
 
 ---
