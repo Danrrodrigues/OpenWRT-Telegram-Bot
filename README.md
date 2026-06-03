@@ -45,10 +45,21 @@ cd /tmp
 curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.0.tar.gz | tar xz
 cd OpenWRT-Telegram-Bot-0.1.0
 
-# 4. Install
+# 4. Install — you will be prompted for token, chat ID, and run mode
 sh install.sh
 
-# 5. Follow the prompts (token + chat ID), then send /start to your bot
+# 5. Send /start to your bot on Telegram
+```
+
+**To update** to a newer version (config is preserved):
+```sh
+cd /tmp/<new-version-folder>
+sh install.sh update
+```
+
+**To change token or chat ID** after install:
+```sh
+sh install.sh reconfigure
 ```
 
 See [docs/installation.md](docs/installation.md) for the full guide.

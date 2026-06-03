@@ -45,22 +45,30 @@ _check_deps() {
 # ---- config ----
 
 _get_token() {
-    printf "Enter your Telegram Bot Token (from @BotFather): "
-    read -r token
+    echo "" >/dev/tty
+    echo "  To get a token: open Telegram, search @BotFather, send /newbot" >/dev/tty
+    echo -n "  Bot Token: " >/dev/tty
+    read -r token </dev/tty
     [ -z "$token" ] && _die "Token cannot be empty"
     echo "$token"
 }
 
 _get_chat_id() {
-    printf "Enter your Telegram Chat ID (from @userinfobot): "
-    read -r chat_id
+    echo "" >/dev/tty
+    echo "  To get your Chat ID: open Telegram, search @userinfobot, send /start" >/dev/tty
+    echo -n "  Chat ID: " >/dev/tty
+    read -r chat_id </dev/tty
     [ -z "$chat_id" ] && _die "Chat ID cannot be empty"
     echo "$chat_id"
 }
 
 _get_mode() {
-    printf "Run mode — (d)aemon or (c)ron? [d]: "
-    read -r choice
+    echo "" >/dev/tty
+    echo "  Run mode:" >/dev/tty
+    echo "    d) daemon — runs as a service, responds in ~2 seconds (recommended)" >/dev/tty
+    echo "    c) cron   — runs every minute, responds in up to 60 seconds" >/dev/tty
+    echo -n "  Choice [d]: " >/dev/tty
+    read -r choice </dev/tty
     case "$choice" in
         c|cron) echo "cron" ;;
         *)      echo "daemon" ;;
@@ -181,44 +189,146 @@ NFTEOF
     fi
 }
 
-# ---- main ----
+# ---- update ----
 
-main() {
-    _info "=== OpenWRT Telegram Bot Installer ==="
+_update() {
+    _info "=== OpenWRT Telegram Bot Updater ==="
     echo ""
 
     _check_root
     _check_openwrt
-    _check_deps
+
+    if [ ! -d "$INSTALL_DIR" ]; then
+        _die "Bot is not installed. Run: sh install.sh"
+    fi
+
+    _info "Stopping service..."
+    [ -f "$SERVICE_FILE" ] && "$SERVICE_FILE" stop 2>/dev/null || true
+
+    _info "Updating scripts..."
+    _copy_files
+
+    _info "Restarting service..."
+    if [ -f "$SERVICE_FILE" ]; then
+        "$SERVICE_FILE" start
+    else
+        /etc/init.d/cron restart 2>/dev/null || true
+    fi
 
     echo ""
-    _info "--- Configuration ---"
+    _info "=== Update complete! ==="
+    echo ""
+    echo "Config was preserved. Send /status to your bot to confirm it's running."
+    echo ""
+}
+
+# ---- reconfigure ----
+
+_reconfigure() {
+    _info "=== Reconfigure OpenWRT Telegram Bot ==="
+    echo ""
+
+    _check_root
+
+    if [ ! -d "$INSTALL_DIR" ]; then
+        _die "Bot is not installed. Run: sh install.sh"
+    fi
+
+    _info "Current config:"
+    uci show telegram-bot 2>/dev/null | grep -v token || true
+    echo ""
+
     token=$(_get_token)
     chat_id=$(_get_chat_id)
     mode=$(_get_mode)
 
-    echo ""
-    _info "--- Installing ---"
-    _copy_files
     _write_uci_config "$token" "$chat_id" "$mode"
-    _setup_nftables
 
-    if [ "$mode" = "daemon" ]; then
-        _install_daemon
-    else
-        _install_cron
-    fi
+    _info "Restarting service..."
+    [ -f "$SERVICE_FILE" ] && "$SERVICE_FILE" restart 2>/dev/null || \
+        /etc/init.d/cron restart 2>/dev/null || true
 
     echo ""
-    _info "=== Installation complete! ==="
+    _info "=== Reconfiguration complete! ==="
     echo ""
-    echo "  Token:   [configured]"
-    echo "  Chat ID: ${chat_id}"
-    echo "  Mode:    ${mode}"
+    echo "Send /start to your bot to confirm."
     echo ""
-    echo "Test by sending /start to your bot on Telegram."
-    echo "Logs: logread -e telegram-bot"
-    echo ""
+}
+
+# ---- main ----
+
+_usage() {
+    cat <<EOF
+Usage: sh install.sh [command]
+
+  (no argument)   Fresh install — copies files and configures the bot
+  update          Update scripts only, preserving existing config
+  reconfigure     Change token, chat ID, or run mode
+  help            Show this help
+
+Examples:
+  sh install.sh
+  sh install.sh update
+  sh install.sh reconfigure
+EOF
+}
+
+main() {
+    local cmd="${1:-install}"
+
+    case "$cmd" in
+        update)
+            _update
+            ;;
+        reconfigure|reconfig)
+            _reconfigure
+            ;;
+        help|--help|-h)
+            _usage
+            ;;
+        install|"")
+            _info "=== OpenWRT Telegram Bot Installer ==="
+            echo ""
+
+            _check_root
+            _check_openwrt
+            _check_deps
+
+            echo ""
+            _info "--- Configuration ---"
+            token=$(_get_token)
+            chat_id=$(_get_chat_id)
+            mode=$(_get_mode)
+
+            echo ""
+            _info "--- Installing ---"
+            _copy_files
+            _write_uci_config "$token" "$chat_id" "$mode"
+            _setup_nftables
+
+            if [ "$mode" = "daemon" ]; then
+                _install_daemon
+            else
+                _install_cron
+            fi
+
+            echo ""
+            _info "=== Installation complete! ==="
+            echo ""
+            echo "  Token:   [configured]"
+            echo "  Chat ID: ${chat_id}"
+            echo "  Mode:    ${mode}"
+            echo ""
+            echo "  Send /start to your bot on Telegram to test."
+            echo "  Logs: logread -e telegram-bot"
+            echo ""
+            ;;
+        *)
+            _error "Unknown command: $cmd"
+            _usage
+            exit 1
+            ;;
+    esac
 }
 
 main "$@"
