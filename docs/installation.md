@@ -54,9 +54,11 @@ logread -e telegram-bot
 
 ---
 
-## Updating
+## Managing the Bot After Install
 
-Download the latest version and run `update` — your config is preserved:
+### ⬆️ Update scripts (preserves config)
+
+Token, blocked devices and speed limits are **not affected**:
 
 ```sh
 cd /tmp
@@ -66,15 +68,13 @@ cd OpenWRT-Telegram-Bot-main
 sh install.sh update
 ```
 
-## Reconfiguring
-
-Change token, chat ID, or run mode without reinstalling:
+### 🔧 Reconfigure (change token, chat ID or run mode)
 
 ```sh
 sh /usr/lib/telegram-bot/install.sh reconfigure
 ```
 
-## Uninstalling
+### 🗑️ Uninstall
 
 ```sh
 sh /usr/lib/telegram-bot/uninstall.sh
