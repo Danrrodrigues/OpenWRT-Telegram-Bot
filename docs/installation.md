@@ -31,14 +31,13 @@ opkg update && opkg install curl
 ## Step 4 — Download the Bot
 
 ```sh
-rm -rf /tmp/bot
-mkdir -p /tmp/bot
-curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.1.tar.gz \
-  | tar xz --strip-components=1 -C /tmp/bot
-cd /tmp/bot
+cd /tmp
+curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.1.tar.gz -o bot.tar.gz
+tar xzf bot.tar.gz
+cd OpenWRT-Telegram-Bot-0.1.1
 ```
 
-> `--strip-components=1` always extracts into `/tmp/bot` regardless of the archive's internal folder name.
+> BusyBox `tar` (used on OpenWRT) does not support `--strip-components`. Download to a file first, then extract.
 
 ## Step 5 — Run the Installer
 
@@ -73,11 +72,10 @@ logread -e telegram-bot
 When a new version is released, download it and run:
 
 ```sh
-rm -rf /tmp/bot
-mkdir -p /tmp/bot
-curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/vX.Y.Z.tar.gz \
-  | tar xz --strip-components=1 -C /tmp/bot
-cd /tmp/bot
+cd /tmp
+curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/vX.Y.Z.tar.gz -o bot.tar.gz
+tar xzf bot.tar.gz
+cd OpenWRT-Telegram-Bot-X.Y.Z
 sh install.sh update
 ```
 
