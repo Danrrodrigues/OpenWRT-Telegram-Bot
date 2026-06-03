@@ -37,17 +37,18 @@ Controle e monitore sua rede doméstica diretamente pelo Telegram. Roda como um 
 # 1. Acesse o roteador via SSH
 ssh root@192.168.1.1
 
-# 2. Baixe o projeto
+# 2. Instale o curl (não vem instalado por padrão no OpenWRT)
+opkg update && opkg install curl
+
+# 3. Baixe o projeto
 cd /tmp
 curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/heads/main.tar.gz | tar xz
 cd OpenWRT-Telegram-Bot-main
 
-# 3. Execute o instalador
+# 4. Execute o instalador
 sh install.sh
 
-# 4. Siga os passos (token + chat ID)
-
-# 5. Envie /start ao seu bot no Telegram
+# 5. Siga os passos (token + chat ID) e envie /start ao seu bot
 ```
 
 Veja o guia completo em [docs/installation.md](docs/installation.md).

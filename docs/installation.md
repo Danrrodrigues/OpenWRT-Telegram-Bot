@@ -18,30 +18,32 @@
 2. Send `/start`
 3. Copy your **chat ID** (a number like `987654321`)
 
-## Step 3 — Download the Bot
+## Step 3 — Install curl
 
-On your router via SSH:
+`curl` is not installed by default on OpenWRT. Install it first:
 
 ```sh
-# Option A: git clone (if git is installed)
-opkg update && opkg install git-http
-git clone https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot /tmp/bot
-cd /tmp/bot
+opkg update && opkg install curl
+```
 
-# Option B: download the release tarball
+> **Note:** `opkg update` requires internet access on the router (WAN connected).
+
+## Step 4 — Download the Bot
+
+```sh
 cd /tmp
 curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/heads/main.tar.gz | tar xz
 cd OpenWRT-Telegram-Bot-main
 ```
 
-## Step 4 — Run the Installer
+## Step 5 — Run the Installer
 
 ```sh
 sh install.sh
 ```
 
 The installer will:
-- Check for `curl` and `jsonfilter` (installs via opkg if missing)
+- Check for `jsonfilter` (installs via opkg if missing)
 - Ask for your bot token and chat ID
 - Ask whether to run as a daemon or cron job
 - Copy scripts to `/usr/lib/telegram-bot/`

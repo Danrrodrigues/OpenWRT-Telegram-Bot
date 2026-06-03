@@ -37,17 +37,18 @@ Control and monitor your home network directly from Telegram. Runs as a lightwei
 # 1. SSH into your router
 ssh root@192.168.1.1
 
-# 2. Download
+# 2. Install curl (not present by default on OpenWRT)
+opkg update && opkg install curl
+
+# 3. Download
 cd /tmp
 curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/heads/main.tar.gz | tar xz
 cd OpenWRT-Telegram-Bot-main
 
-# 3. Install
+# 4. Install
 sh install.sh
 
-# 4. Follow the prompts (token + chat ID)
-
-# 5. Send /start to your bot on Telegram
+# 5. Follow the prompts (token + chat ID), then send /start to your bot
 ```
 
 See [docs/installation.md](docs/installation.md) for the full guide.
