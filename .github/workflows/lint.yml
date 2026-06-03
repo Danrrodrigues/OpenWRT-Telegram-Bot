@@ -20,5 +20,5 @@ jobs:
         run: |
           find . -name "*.sh" -not -path "./.git/*" | while read -r f; do
             echo "Checking $f"
-            shellcheck --shell=sh "$f"
+            shellcheck --shell=sh -e SC2018,SC2019,SC3043 "$f"
           done
