@@ -31,12 +31,14 @@ opkg update && opkg install curl
 ## Step 4 — Download the Bot
 
 ```sh
-cd /tmp
-curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.1.tar.gz | tar xz
-cd OpenWRT-Telegram-Bot-0.1.1
+rm -rf /tmp/bot
+mkdir -p /tmp/bot
+curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.1.tar.gz \
+  | tar xz --strip-components=1 -C /tmp/bot
+cd /tmp/bot
 ```
 
-> GitHub strips the `v` from tag names in archive folders — the directory will be `OpenWRT-Telegram-Bot-0.1.1`, not `v0.1.0`.
+> `--strip-components=1` always extracts into `/tmp/bot` regardless of the archive's internal folder name.
 
 ## Step 5 — Run the Installer
 
@@ -68,12 +70,14 @@ logread -e telegram-bot
 
 ## Updating
 
-When a new version is released, download the new release and run:
+When a new version is released, download it and run:
 
 ```sh
-cd /tmp
-curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/vX.Y.Z.tar.gz | tar xz
-cd OpenWRT-Telegram-Bot-X.Y.Z
+rm -rf /tmp/bot
+mkdir -p /tmp/bot
+curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/vX.Y.Z.tar.gz \
+  | tar xz --strip-components=1 -C /tmp/bot
+cd /tmp/bot
 sh install.sh update
 ```
 

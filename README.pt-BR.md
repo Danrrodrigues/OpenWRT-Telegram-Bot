@@ -41,9 +41,10 @@ ssh root@192.168.1.1
 opkg update && opkg install curl
 
 # 3. Baixe o projeto
-cd /tmp
-curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.1.tar.gz | tar xz
-cd OpenWRT-Telegram-Bot-0.1.1
+rm -rf /tmp/bot && mkdir -p /tmp/bot
+curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.1.tar.gz \
+  | tar xz --strip-components=1 -C /tmp/bot
+cd /tmp/bot
 
 # 4. Execute o instalador — ele pedirá token, chat ID e modo de execução
 sh install.sh
@@ -53,8 +54,10 @@ sh install.sh
 
 **Para atualizar** para uma nova versão (config é preservada):
 ```sh
-cd /tmp/<pasta-nova-versao>
-sh install.sh update
+rm -rf /tmp/bot && mkdir -p /tmp/bot
+curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/vX.Y.Z.tar.gz \
+  | tar xz --strip-components=1 -C /tmp/bot
+cd /tmp/bot && sh install.sh update
 ```
 
 **Para alterar token ou chat ID** após instalar:
