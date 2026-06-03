@@ -32,6 +32,12 @@ opkg update && opkg install curl
 
 ```sh
 cd /tmp
+
+# Option A: latest release (recommended)
+curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.0.tar.gz | tar xz
+cd OpenWRT-Telegram-Bot-v0.1.0
+
+# Option B: latest code from main branch
 curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/heads/main.tar.gz | tar xz
 cd OpenWRT-Telegram-Bot-main
 ```
