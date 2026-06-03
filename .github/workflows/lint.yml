@@ -13,8 +13,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Pin shellcheck to a fixed version so CI matches the local pre-push hook.
+      # apt-get installs an older version whose SC2015 heuristic differs, which
+      # caused "passes locally, fails in CI" mismatches.
       - name: Install shellcheck
-        run: sudo apt-get install -y shellcheck
+        env:
+          SHELLCHECK_VERSION: v0.11.0
+        run: |
+          curl -fsSL "https://github.com/koalaman/shellcheck/releases/download/${SHELLCHECK_VERSION}/shellcheck-${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" \
+            | tar -xJ
+          sudo install "shellcheck-${SHELLCHECK_VERSION}/shellcheck" /usr/local/bin/shellcheck
+          shellcheck --version
 
       - name: Run shellcheck
         run: |

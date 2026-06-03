@@ -221,7 +221,9 @@ _update() {
     fi
 
     _info "Stopping service..."
-    [ -f "$SERVICE_FILE" ] && "$SERVICE_FILE" stop 2>/dev/null || true
+    if [ -f "$SERVICE_FILE" ]; then
+        "$SERVICE_FILE" stop 2>/dev/null || true
+    fi
 
     _info "Updating scripts..."
     _copy_files
@@ -265,8 +267,11 @@ _reconfigure() {
     _write_uci_config "$token" "$chat_id" "$mode"
 
     _info "Restarting service..."
-    [ -f "$SERVICE_FILE" ] && "$SERVICE_FILE" restart 2>/dev/null || \
+    if [ -f "$SERVICE_FILE" ] && "$SERVICE_FILE" restart 2>/dev/null; then
+        :
+    else
         /etc/init.d/cron restart 2>/dev/null || true
+    fi
 
     echo ""
     _info "=== Reconfiguration complete! ==="
