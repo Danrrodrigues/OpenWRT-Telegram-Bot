@@ -1,0 +1,25 @@
+# Secrets — never commit tokens or chat IDs
+*.env
+.env.*
+config.local.*
+secrets.*
+
+# Logs
+*.log
+/tmp/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test artifacts
+test/output/

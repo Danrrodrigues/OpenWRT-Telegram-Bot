@@ -1,0 +1,11 @@
+# Shell scripts must use LF — they run on OpenWRT (Linux)
+*.sh text eol=lf
+
+# Docs and config: default (auto)
+*.md text
+*.yml text
+*.json text
+
+# Binaries
+*.bin binary
+*.ubi binary
