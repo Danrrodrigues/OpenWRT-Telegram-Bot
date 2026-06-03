@@ -82,6 +82,9 @@ _write_uci_config() {
 
     _info "Writing config to ${CONFIG_FILE}..."
 
+    # Create the file first so UCI has something to commit to
+    touch "$CONFIG_FILE"
+
     uci -q batch <<EOF
 delete telegram-bot.bot
 set telegram-bot.bot=telegram
