@@ -33,7 +33,9 @@ _check_deps() {
 
     if ! command -v curl >/dev/null 2>&1; then
         _info "Installing curl via opkg..."
-        opkg update && opkg install curl || _die "Failed to install curl. Please run: opkg install curl"
+        if ! { opkg update && opkg install curl; }; then
+            _die "Failed to install curl. Please run: opkg install curl"
+        fi
     fi
 
     if ! command -v jsonfilter >/dev/null 2>&1; then
@@ -47,7 +49,7 @@ _check_deps() {
 _get_token() {
     echo "" >/dev/tty
     echo "  To get a token: open Telegram, search @BotFather, send /newbot" >/dev/tty
-    echo -n "  Bot Token: " >/dev/tty
+    printf '%s' "  Bot Token: " >/dev/tty
     read -r token </dev/tty
     [ -z "$token" ] && _die "Token cannot be empty"
     echo "$token"
@@ -56,7 +58,7 @@ _get_token() {
 _get_chat_id() {
     echo "" >/dev/tty
     echo "  To get your Chat ID: open Telegram, search @userinfobot, send /start" >/dev/tty
-    echo -n "  Chat ID: " >/dev/tty
+    printf '%s' "  Chat ID: " >/dev/tty
     read -r chat_id </dev/tty
     [ -z "$chat_id" ] && _die "Chat ID cannot be empty"
     echo "$chat_id"
@@ -67,7 +69,7 @@ _get_mode() {
     echo "  Run mode:" >/dev/tty
     echo "    d) daemon — runs as a service, responds in ~2 seconds (recommended)" >/dev/tty
     echo "    c) cron   — runs every minute, responds in up to 60 seconds" >/dev/tty
-    echo -n "  Choice [d]: " >/dev/tty
+    printf '%s' "  Choice [d]: " >/dev/tty
     read -r choice </dev/tty
     case "$choice" in
         c|cron) echo "cron" ;;

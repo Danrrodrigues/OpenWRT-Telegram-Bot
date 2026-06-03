@@ -210,6 +210,9 @@ awk -v root_dir="$ROOT_DIR" '
     /^# ---- main ----/ { exit }
     { print }
 ' "$ROOT_DIR/src/bot.sh" > "$BOT_SOURCE_FILE"
+# BOT_SOURCE_FILE is generated at runtime by the awk command above, so there is no
+# static path for shellcheck to follow.
+# shellcheck disable=SC1090
 . "$BOT_SOURCE_FILE"
 
 telegram_send() {

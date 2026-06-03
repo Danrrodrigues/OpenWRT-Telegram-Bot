@@ -65,7 +65,10 @@ config_del_list() {
     fi
 }
 
-# Load all config into env vars with defaults
+# Load all config into env vars with defaults.
+# BOT_TOKEN and BOT_ALERTS are consumed by other sourced files (telegram.sh, bot.sh),
+# so shellcheck cannot see their use when analyzing this file in isolation.
+# shellcheck disable=SC2034
 config_load() {
     local legacy_alerts
 

@@ -18,7 +18,9 @@ jobs:
 
       - name: Run shellcheck
         run: |
-          find . -name "*.sh" -not -path "./.git/*" | while read -r f; do
+          rc=0
+          for f in $(find . -name "*.sh" -not -path "./.git/*"); do
             echo "Checking $f"
-            shellcheck --shell=sh -e SC2018,SC2019,SC3043 "$f"
+            shellcheck -x --source-path=SCRIPTDIR --shell=sh -e SC2018,SC2019,SC3043 "$f" || rc=1
           done
+          exit $rc

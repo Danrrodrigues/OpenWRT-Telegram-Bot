@@ -13,7 +13,6 @@ UCI_DB_FILE="$TEST_TMP/uci-db"
 EMPTY_BIN_DIR="$TEST_TMP/empty-bin"
 TEST_SHELL=$(command -v sh)
 MESSAGES=""
-CURRENT_MACS=""
 
 mkdir -p "$TEST_TMP"
 mkdir -p "$EMPTY_BIN_DIR"
@@ -96,16 +95,8 @@ config_set() {
     :
 }
 
-_monitor_current_macs() {
-    printf '%s' "$CURRENT_MACS"
-}
-
 reset_messages() {
     MESSAGES=""
-}
-
-set_current_macs() {
-    CURRENT_MACS="$1"
 }
 
 assert_equals() {
@@ -144,12 +135,17 @@ assert_equals "$name" "Unknown" "wildcard lease hostname should fall back to Unk
 name=$(device_identity_hostname "11:22:33:44:55:66")
 assert_equals "$name" "Unknown" "empty lease hostname should fall back to Unknown"
 
+# $ROOT_DIR is passed as an env var and must expand inside the child shell ("$TEST_SHELL" -c),
+# not in this parent shell, so the single quotes are intentional.
+# shellcheck disable=SC2016
 name=$(PATH="$EMPTY_BIN_DIR" LEASES_FILE="$LEASES_FILE" ROOT_DIR="$ROOT_DIR" "$TEST_SHELL" -c '. "$ROOT_DIR/src/core/device_identity.sh"; device_identity_hostname "5C:CD:5B:C3:29:45"')
 assert_equals "$name" "notebook-avell" "without uci, helper should fall back to lease hostname"
 
+# shellcheck disable=SC2016
 name=$(PATH="$EMPTY_BIN_DIR" LEASES_FILE="$LEASES_FILE" ROOT_DIR="$ROOT_DIR" "$TEST_SHELL" -c '. "$ROOT_DIR/src/core/device_identity.sh"; device_identity_hostname "aa:bb:cc:dd:ee:ff"')
 assert_equals "$name" "Unknown" "without uci, wildcard lease hostname should still fall back to Unknown"
 
+# shellcheck disable=SC2016
 name=$(PATH="$EMPTY_BIN_DIR" LEASES_FILE="$LEASES_FILE" ROOT_DIR="$ROOT_DIR" "$TEST_SHELL" -c '. "$ROOT_DIR/src/core/device_identity.sh"; device_identity_hostname "11:22:33:44:55:66"')
 assert_equals "$name" "Unknown" "without uci, empty lease hostname should still fall back to Unknown"
 
@@ -196,8 +192,6 @@ monitor_init
 write_leases <<'EOF'
 1717420000 de:ad:be:ef:00:01 192.168.1.24 tablet *
 EOF
-set_current_macs "de:ad:be:ef:00:01
-"
 reset_messages
 monitor_check "123"
 case "$MESSAGES" in
