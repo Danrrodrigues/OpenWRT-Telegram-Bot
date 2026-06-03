@@ -1,43 +1,47 @@
 #!/bin/sh
 # Speed limiting — uses nft-qos (preferred) or tc (iproute2 fallback)
+# shellcheck source=../core/config.sh
+# shellcheck source=../core/logger.sh
+# shellcheck source=../core/telegram.sh
 
 LEASES_FILE="/tmp/dhcp.leases"
 
 # Command: /limit <mac> <down_mbps> <up_mbps>
-# Example: /limit AA:BB:CC:DD:EE:FF 10 5
 bandwidth_limit() {
     local chat_id="$1"
     local target="$2"
     local down_mbps="$3"
     local up_mbps="$4"
+    local mac ip down_kbps up_kbps hostname
 
     if [ -z "$target" ] || [ -z "$down_mbps" ] || [ -z "$up_mbps" ]; then
-        telegram_send "$chat_id" "Usage: \`/limit <MAC> <down Mbps> <up Mbps>\`\nExample: \`/limit AA:BB:CC:DD:EE:FF 10 5\`"
+        telegram_send "$chat_id" "Usage: <code>/limit &lt;MAC&gt; &lt;down Mbps&gt; &lt;up Mbps&gt;</code>
+Example: <code>/limit AA:BB:CC:DD:EE:FF 10 5</code>"
         return
     fi
 
-    # Validate numeric values
-    case "$down_mbps$up_mbps" in *[!0-9]*)
-        telegram_send "$chat_id" "❌ Speed values must be integers (Mbps)."
-        return
+    case "$down_mbps$up_mbps" in
+        *[!0-9]*)
+            telegram_send "$chat_id" "❌ Speed values must be integers (Mbps)."
+            return
+            ;;
     esac
 
-    local mac
     mac=$(_bw_resolve_mac "$target")
     if [ -z "$mac" ]; then
-        telegram_send "$chat_id" "❌ Device not found: \`${target}\`\nMake sure the device is connected and try its MAC address."
+        telegram_send "$chat_id" "❌ Device not found: <code>${target}</code>
+Make sure the device is connected and try its MAC address."
         return
     fi
 
-    local ip
     ip=$(_bw_resolve_ip "$mac")
     if [ -z "$ip" ]; then
-        telegram_send "$chat_id" "❌ Cannot resolve IP for \`${mac}\`. Device may not have a DHCP lease."
+        telegram_send "$chat_id" "❌ Cannot resolve IP for <code>${mac}</code>. Device may not have a DHCP lease."
         return
     fi
 
-    local down_kbps=$(( down_mbps * 1000 ))
-    local up_kbps=$(( up_mbps * 1000 ))
+    down_kbps=$(( down_mbps * 1000 ))
+    up_kbps=$(( up_mbps * 1000 ))
 
     if _bw_has_nftqos; then
         _bw_limit_nftqos "$ip" "$down_kbps" "$up_kbps"
@@ -45,14 +49,11 @@ bandwidth_limit() {
         _bw_limit_tc "$ip" "$down_kbps" "$up_kbps"
     fi
 
-    # Persist in UCI: store as "mac:down_kbps:up_kbps"
-    # Remove existing entry first
     config_del_list "limited" "$(config_get_list "limited" | grep "^${mac}:")"
     config_add_list "limited" "${mac}:${down_kbps}:${up_kbps}"
 
-    local hostname
     hostname=$(_bw_hostname "$mac")
-    telegram_send "$chat_id" "$(printf '✅ Speed limit set for *%s*\n\n⬇️ Download: *%s Mbps*\n⬆️ Upload: *%s Mbps*' \
+    telegram_send "$chat_id" "$(printf '✅ Speed limit set for <b>%s</b>\n\n⬇️ Download: <b>%s Mbps</b>\n⬆️ Upload: <b>%s Mbps</b>' \
         "$hostname" "$down_mbps" "$up_mbps")"
     log_info "bandwidth: limited $mac ($hostname) down=${down_mbps}M up=${up_mbps}M"
 }
@@ -61,20 +62,19 @@ bandwidth_limit() {
 bandwidth_unlimit() {
     local chat_id="$1"
     local target="$2"
+    local mac ip hostname
 
     if [ -z "$target" ]; then
-        telegram_send "$chat_id" "Usage: \`/unlimit <MAC or IP>\`"
+        telegram_send "$chat_id" "Usage: <code>/unlimit &lt;MAC or IP&gt;</code>"
         return
     fi
 
-    local mac
     mac=$(_bw_resolve_mac "$target")
     if [ -z "$mac" ]; then
-        telegram_send "$chat_id" "❌ Device not found: \`${target}\`"
+        telegram_send "$chat_id" "❌ Device not found: <code>${target}</code>"
         return
     fi
 
-    local ip
     ip=$(_bw_resolve_ip "$mac")
 
     if [ -n "$ip" ]; then
@@ -87,17 +87,16 @@ bandwidth_unlimit() {
 
     config_del_list "limited" "$(config_get_list "limited" | grep "^${mac}:")"
 
-    local hostname
     hostname=$(_bw_hostname "$mac")
-    telegram_send "$chat_id" "✅ Speed limit removed for *${hostname}* (\`${mac}\`)."
+    telegram_send "$chat_id" "✅ Speed limit removed for <b>${hostname}</b> (<code>${mac}</code>)."
     log_info "bandwidth: removed limit for $mac"
 }
 
 # Restore limits from UCI on bot startup
 bandwidth_restore_limits() {
+    local ip
     config_get_list "limited" | while IFS=: read -r mac down_kbps up_kbps; do
         [ -z "$mac" ] && continue
-        local ip
         ip=$(_bw_resolve_ip "$mac")
         [ -z "$ip" ] && continue
         if _bw_has_nftqos; then
@@ -130,18 +129,15 @@ _bw_unlimit_nftqos() {
 
 _bw_limit_tc() {
     local ip="$1" down_kbps="$2" up_kbps="$3"
-    local iface
+    local iface handle
     iface=$(ip route show default 2>/dev/null | awk '/default/{print $5}' | head -1)
     [ -z "$iface" ] && iface="br-lan"
 
-    # Remove stale rules first
     _bw_unlimit_tc "$ip"
 
-    # Ingress (download) — requires IFB
     if ip link show ifb0 >/dev/null 2>&1 || ip link add ifb0 type ifb 2>/dev/null; then
         ip link set ifb0 up 2>/dev/null
         tc qdisc add dev "$iface" ingress 2>/dev/null || true
-        local handle
         handle=$(echo "$ip" | awk -F. '{printf "1:%d", $4}')
         tc filter add dev "$iface" parent ffff: protocol ip u32 \
             match ip dst "$ip/32" \
@@ -153,9 +149,7 @@ _bw_limit_tc() {
             match ip dst "$ip/32" flowid "$handle" 2>/dev/null || true
     fi
 
-    # Egress (upload)
     tc qdisc add dev "$iface" root handle 1: htb default 99 2>/dev/null || true
-    local handle
     handle=$(echo "$ip" | awk -F. '{printf "1:%d", $4}')
     tc class add dev "$iface" parent 1: classid "$handle" htb \
         rate "${up_kbps}kbit" ceil "${up_kbps}kbit" 2>/dev/null || true
@@ -165,11 +159,10 @@ _bw_limit_tc() {
 
 _bw_unlimit_tc() {
     local ip="$1"
-    local iface
+    local iface handle
     iface=$(ip route show default 2>/dev/null | awk '/default/{print $5}' | head -1)
     [ -z "$iface" ] && iface="br-lan"
 
-    local handle
     handle=$(echo "$ip" | awk -F. '{printf "1:%d", $4}')
     tc filter del dev "$iface" parent 1: 2>/dev/null || true
     tc class del dev "$iface" classid "$handle" 2>/dev/null || true

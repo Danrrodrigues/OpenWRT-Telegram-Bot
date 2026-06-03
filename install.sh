@@ -198,7 +198,17 @@ NFTEOF
 # ---- update ----
 
 _update() {
+    local new_version
+    new_version=$(grep '^VERSION=' "${SCRIPT_DIR}/src/bot.sh" 2>/dev/null | cut -d'"' -f2)
+
+    local old_version
+    old_version=$(grep '^VERSION=' "${INSTALL_DIR}/bot.sh" 2>/dev/null | cut -d'"' -f2)
+    [ -z "$old_version" ] && old_version="unknown"
+
     _info "=== OpenWRT Telegram Bot Updater ==="
+    echo ""
+    echo "  Current version: ${old_version}"
+    echo "  New version:     ${new_version:-unknown}"
     echo ""
 
     _check_root
@@ -223,6 +233,8 @@ _update() {
 
     echo ""
     _info "=== Update complete! ==="
+    echo ""
+    echo "  Updated: ${old_version} -> ${new_version:-unknown}"
     echo ""
     echo "Config was preserved. Send /status to your bot to confirm it's running."
     echo ""
