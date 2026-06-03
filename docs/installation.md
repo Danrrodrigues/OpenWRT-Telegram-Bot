@@ -32,11 +32,11 @@ opkg update && opkg install curl
 
 ```sh
 cd /tmp
-curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.0.tar.gz | tar xz
-cd OpenWRT-Telegram-Bot-0.1.0
+curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.1.tar.gz | tar xz
+cd OpenWRT-Telegram-Bot-0.1.1
 ```
 
-> GitHub strips the `v` from tag names in archive folders — the directory will be `OpenWRT-Telegram-Bot-0.1.0`, not `v0.1.0`.
+> GitHub strips the `v` from tag names in archive folders — the directory will be `OpenWRT-Telegram-Bot-0.1.1`, not `v0.1.0`.
 
 ## Step 5 — Run the Installer
 

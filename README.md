@@ -42,8 +42,8 @@ opkg update && opkg install curl
 
 # 3. Download
 cd /tmp
-curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.0.tar.gz | tar xz
-cd OpenWRT-Telegram-Bot-0.1.0
+curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.1.tar.gz | tar xz
+cd OpenWRT-Telegram-Bot-0.1.1
 
 # 4. Install — you will be prompted for token, chat ID, and run mode
 sh install.sh
