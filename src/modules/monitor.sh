@@ -9,7 +9,11 @@ KNOWN_DEVICES_FILE="/tmp/telegram-bot-known-devices"
 
 monitor_init() {
     if [ ! -f "$KNOWN_DEVICES_FILE" ]; then
-        [ -f "$LEASES_FILE" ] && awk '{print $2}' "$LEASES_FILE" > "$KNOWN_DEVICES_FILE" || touch "$KNOWN_DEVICES_FILE"
+        if [ -f "$LEASES_FILE" ]; then
+            awk '{print $2}' "$LEASES_FILE" > "$KNOWN_DEVICES_FILE"
+        else
+            touch "$KNOWN_DEVICES_FILE"
+        fi
         log_info "monitor: initialized known devices snapshot"
     fi
 }
@@ -124,6 +128,7 @@ Use <code>/alerts off</code>, <code>/alerts known</code>, <code>/alerts unknown<
     config_set "alert_mode" "$mode"
     BOT_ALERT_MODE="$mode"
 
+    # shellcheck disable=SC2034
     if [ "$mode" = "off" ]; then
         BOT_ALERTS=0
     else
