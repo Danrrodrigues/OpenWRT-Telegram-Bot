@@ -41,8 +41,9 @@ telegram_get_updates() {
         "${TELEGRAM_API}${BOT_TOKEN}/getUpdates?offset=${offset}&timeout=${TELEGRAM_TIMEOUT}&allowed_updates=message" \
         > "$UPDATES_FILE" 2>/dev/null
 
+    # Count by extracting all update_ids (one per line) — jsonfilter 'length' not supported on OpenWRT
     local count
-    count=$(jsonfilter -i "$UPDATES_FILE" -e '@.result' 2>/dev/null | jsonfilter -e 'length' 2>/dev/null) || count=0
+    count=$(jsonfilter -i "$UPDATES_FILE" -e '@.result[*].update_id' 2>/dev/null | wc -l | tr -d ' ')
     echo "${count:-0}"
 }
 
@@ -55,9 +56,7 @@ telegram_update_field() {
     jsonfilter -i "$UPDATES_FILE" -e "@.result[${idx}].${field}" 2>/dev/null
 }
 
-# Returns the highest update_id in the current batch (for offset advancement)
+# Returns the last update_id in the current batch (for offset advancement)
 telegram_last_update_id() {
-    local count="$1"
-    local last_idx=$(( count - 1 ))
-    telegram_update_field "$last_idx" "update_id"
+    jsonfilter -i "$UPDATES_FILE" -e '@.result[*].update_id' 2>/dev/null | tail -1
 }
