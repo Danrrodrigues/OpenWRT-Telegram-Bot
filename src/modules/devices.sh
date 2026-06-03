@@ -82,8 +82,10 @@ Example: <code>/block AA:BB:CC:DD:EE:FF</code>"
     fi
 
     if command -v nft >/dev/null 2>&1; then
+        # shellcheck disable=SC1083
         nft list set inet fw4 telegram_blocked >/dev/null 2>&1 || \
             nft add set inet fw4 telegram_blocked { type ether_addr \; } 2>/dev/null
+        # shellcheck disable=SC1083
         nft add element inet fw4 telegram_blocked { "$mac" } 2>/dev/null
     fi
 
@@ -137,6 +139,7 @@ devices_unblock() {
     local mac="$target"
 
     if command -v nft >/dev/null 2>&1; then
+        # shellcheck disable=SC1083
         nft delete element inet fw4 telegram_blocked { "$mac" } 2>/dev/null || true
     fi
 
@@ -150,11 +153,15 @@ devices_unblock() {
 devices_restore_blocks() {
     command -v nft >/dev/null 2>&1 || return 0
 
+    # shellcheck disable=SC1083
     nft list set inet fw4 telegram_blocked >/dev/null 2>&1 || \
         nft add set inet fw4 telegram_blocked { type ether_addr \; } 2>/dev/null
 
     config_get_list "blocked" | while IFS= read -r mac; do
-        [ -n "$mac" ] && nft add element inet fw4 telegram_blocked { "$mac" } 2>/dev/null || true
+        if [ -n "$mac" ]; then
+            # shellcheck disable=SC1083
+            nft add element inet fw4 telegram_blocked { "$mac" } 2>/dev/null || true
+        fi
     done
     log_info "devices: restored blocked MACs from config"
 }
