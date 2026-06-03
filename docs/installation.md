@@ -31,16 +31,13 @@ opkg update && opkg install curl
 ## Step 4 — Download the Bot
 
 ```sh
-cd /tmp
-
-# Option A: latest release (recommended)
-curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.0.tar.gz | tar xz
-cd OpenWRT-Telegram-Bot-v0.1.0
-
-# Option B: latest code from main branch
-curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/heads/main.tar.gz | tar xz
-cd OpenWRT-Telegram-Bot-main
+mkdir -p /tmp/bot
+curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/tags/v0.1.0.tar.gz \
+  | tar xz --strip-components=1 -C /tmp/bot
+cd /tmp/bot
 ```
+
+> `--strip-components=1` extracts directly into `/tmp/bot` regardless of the archive's internal folder name.
 
 ## Step 5 — Run the Installer
 
