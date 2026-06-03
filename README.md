@@ -73,13 +73,22 @@ See [docs/installation.md](docs/installation.md) for the full guide.
 |---------|-------------|
 | `/devices` | List connected devices |
 | `/kick <MAC or IP>` | Disconnect from Wi-Fi |
+| `/name <MAC> <hostname>` | Save a friendly device name by MAC |
 | `/block <MAC>` | Block permanently |
 | `/unblock <MAC>` | Remove block |
 | `/limit <MAC> <↓Mbps> <↑Mbps>` | Set speed limit |
 | `/unlimit <MAC>` | Remove speed limit |
 | `/status` | Router status |
-| `/alerts on\|off` | Toggle new device alerts |
+| `/alerts off\|known\|unknown\|all` | Set device alert mode |
 | `/help` | Show all commands |
+
+Example:
+
+```sh
+/name 92:27:f0:1a:66:6c celular-marcia
+```
+
+Device names resolve in this order: static OpenWRT DHCP host name for the MAC, DHCP lease hostname, then `Unknown`.
 
 See [docs/commands.md](docs/commands.md) for examples.
 
@@ -91,6 +100,7 @@ See [docs/commands.md](docs/commands.md) for examples.
 src/
 ├── bot.sh            — Entry point: daemon loop or cron runner
 ├── core/
+│   ├── device_identity.sh — Static DHCP host names + hostname rendering
 │   ├── telegram.sh   — Telegram API (getUpdates, sendMessage)
 │   ├── config.sh     — UCI config read/write
 │   └── logger.sh     — Logging to syslog + file
@@ -113,7 +123,7 @@ src/
 # View config
 uci show telegram-bot
 
-# Change alert mode (all / unknown devices only)
+# Change alert mode (off / known / unknown / all)
 uci set telegram-bot.bot.alert_mode='unknown'
 uci commit telegram-bot
 
@@ -125,6 +135,12 @@ logread -e telegram-bot
 ```
 
 See [docs/configuration.md](docs/configuration.md) for all options.
+
+---
+
+## Changelog
+
+- `v0.2.1` — Added device alert modes (`off|known|unknown|all`), active Wi-Fi presence detection for reconnect alerts, `/name <MAC> <hostname>`, static OpenWRT hostname priority, and the installer fix for `core/device_identity.sh`.
 
 ---
 

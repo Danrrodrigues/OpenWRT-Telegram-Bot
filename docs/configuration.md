@@ -9,7 +9,6 @@ config telegram 'bot'
     option token        'YOUR_BOT_TOKEN'
     option chat_ids     '123456789'
     option mode         'daemon'
-    option alerts       '1'
     option alert_mode   'all'
     option poll_interval '30'
     option log_level    'info'
@@ -57,21 +56,32 @@ uci commit telegram-bot
 /etc/init.d/telegram-bot restart
 ```
 
-### `alerts`
-
-`1` (enabled, default) or `0` (disabled). Controls new device join notifications.
-
-Can also be toggled at runtime with `/alerts on` or `/alerts off`.
-
 ### `alert_mode`
 
-- `all` (default): alert for every new DHCP lease.
-- `unknown`: alert only for devices never seen before (persistent list in `/etc/telegram-bot-seen-devices`).
+- `off`: disable device join notifications.
+- `known`: alert only when a previously seen device reconnects.
+- `unknown`: alert only for devices never seen before.
+- `all` (default): alert for first-time devices and reconnecting known devices.
+
+Known/unknown tracking is persistent by MAC address in `/etc/telegram-bot-seen-devices`.
+Current presence tracking between monitor cycles uses `/tmp/telegram-bot-known-devices`.
 
 ```sh
 uci set telegram-bot.bot.alert_mode='unknown'
 uci commit telegram-bot
 ```
+
+Can also be changed at runtime with `/alerts off`, `/alerts known`, `/alerts unknown`, or `/alerts all`.
+
+## Device Names
+
+`/name <MAC> <hostname>` saves a friendly device name by MAC in the OpenWRT DHCP config, without assigning a fixed IP.
+
+Device names are resolved in this order:
+
+1. Static OpenWRT DHCP host name for the MAC
+2. DHCP lease hostname
+3. `Unknown`
 
 ### `poll_interval`
 

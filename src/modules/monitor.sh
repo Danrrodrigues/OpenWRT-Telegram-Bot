@@ -17,27 +17,43 @@ monitor_init() {
 # Check for new devices and send Telegram alert
 monitor_check() {
     local chat_id="$1"
-    local mac lease ip hostname
-    [ -f "$LEASES_FILE" ] || return 0
+    local mac lease ip hostname current_file
+    current_file="${KNOWN_DEVICES_FILE}.current"
+
+    _monitor_current_macs > "$current_file"
 
     while IFS= read -r mac; do
+        [ -n "$mac" ] || continue
+
         if ! grep -qx "$mac" "$KNOWN_DEVICES_FILE" 2>/dev/null; then
             lease=$(grep " ${mac} " "$LEASES_FILE" | head -1)
             ip=$(echo "$lease" | awk '{print $3}')
-            hostname=$(echo "$lease" | awk '{print $4}')
-            [ "$hostname" = "*" ] && hostname="Unknown"
+            hostname=$(device_identity_hostname "$mac")
 
-            if [ "$BOT_ALERT_MODE" = "all" ] || ! _monitor_ever_seen "$mac"; then
+            if _monitor_should_alert "$mac"; then
                 log_info "monitor: new device: $hostname ($mac / $ip)"
                 _monitor_send_alert "$chat_id" "$hostname" "$mac" "$ip"
-                _monitor_mark_seen "$mac"
             fi
 
-            echo "$mac" >> "$KNOWN_DEVICES_FILE"
+            _monitor_mark_seen "$mac"
         fi
-    done <<EOF
-$(awk '{print $2}' "$LEASES_FILE")
-EOF
+    done < "$current_file"
+
+    mv "$current_file" "$KNOWN_DEVICES_FILE"
+}
+
+_monitor_current_macs() {
+    local iface
+
+    if command -v iw >/dev/null 2>&1; then
+        iw dev 2>/dev/null | awk '$1=="Interface"{print $2}' | while IFS= read -r iface; do
+            [ -n "$iface" ] || continue
+            iw dev "$iface" station dump 2>/dev/null | awk '$1=="Station"{print tolower($2)}'
+        done | awk 'NF && !seen[$0]++'
+        return
+    fi
+
+    [ -f "$LEASES_FILE" ] && awk '{print tolower($2)}' "$LEASES_FILE"
 }
 
 _monitor_send_alert() {
@@ -55,28 +71,64 @@ _monitor_ever_seen() {
 }
 
 _monitor_mark_seen() {
-    echo "$1" >> "$_SEEN_EVER_FILE"
+    _monitor_ever_seen "$1" || echo "$1" >> "$_SEEN_EVER_FILE"
 }
 
-# Command: /alerts on|off
+_monitor_should_alert() {
+    local mac="$1"
+
+    case "${BOT_ALERT_MODE:-all}" in
+        off)
+            return 1
+            ;;
+        all)
+            return 0
+            ;;
+        known)
+            _monitor_ever_seen "$mac"
+            return
+            ;;
+        unknown)
+            ! _monitor_ever_seen "$mac"
+            return
+            ;;
+        *)
+            return 0
+            ;;
+    esac
+}
+
+# Command: /alerts off|known|unknown|all
 monitor_alerts_toggle() {
     local chat_id="$1"
     local arg="$2"
-    local state
+    local mode
+
     case "$arg" in
         on|1)
-            config_set "alerts" "1"
-            BOT_ALERTS=1
-            telegram_send "$chat_id" "✅ New device alerts <b>enabled</b>."
+            mode="all"
             ;;
         off|0)
-            config_set "alerts" "0"
-            BOT_ALERTS=0
-            telegram_send "$chat_id" "🔕 New device alerts <b>disabled</b>."
+            mode="off"
+            ;;
+        all|known|unknown)
+            mode="$arg"
             ;;
         *)
-            state=$([ "$BOT_ALERTS" = "1" ] && echo "on" || echo "off")
-            telegram_send "$chat_id" "Alerts are currently <b>${state}</b>. Use <code>/alerts on</code> or <code>/alerts off</code>."
+            telegram_send "$chat_id" "Alerts mode is currently <b>${BOT_ALERT_MODE:-all}</b>.
+Use <code>/alerts off</code>, <code>/alerts known</code>, <code>/alerts unknown</code>, or <code>/alerts all</code>."
+            return
             ;;
     esac
+
+    config_set "alert_mode" "$mode"
+    BOT_ALERT_MODE="$mode"
+
+    if [ "$mode" = "off" ]; then
+        BOT_ALERTS=0
+    else
+        BOT_ALERTS=1
+    fi
+
+    telegram_send "$chat_id" "✅ Device alerts mode set to <b>${mode}</b>."
 }

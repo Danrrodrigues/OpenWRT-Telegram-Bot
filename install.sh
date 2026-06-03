@@ -91,7 +91,6 @@ set telegram-bot.bot=telegram
 set telegram-bot.bot.token='${token}'
 set telegram-bot.bot.chat_ids='${chat_id}'
 set telegram-bot.bot.mode='${mode}'
-set telegram-bot.bot.alerts='1'
 set telegram-bot.bot.alert_mode='all'
 set telegram-bot.bot.poll_interval='30'
 set telegram-bot.bot.log_level='info'
@@ -112,6 +111,7 @@ _copy_files() {
 
     cp "${SCRIPT_DIR}/src/bot.sh"                "${INSTALL_DIR}/bot.sh"
     cp "${SCRIPT_DIR}/src/core/config.sh"        "${INSTALL_DIR}/core/config.sh"
+    cp "${SCRIPT_DIR}/src/core/device_identity.sh" "${INSTALL_DIR}/core/device_identity.sh"
     cp "${SCRIPT_DIR}/src/core/logger.sh"        "${INSTALL_DIR}/core/logger.sh"
     cp "${SCRIPT_DIR}/src/core/telegram.sh"      "${INSTALL_DIR}/core/telegram.sh"
     cp "${SCRIPT_DIR}/src/modules/monitor.sh"    "${INSTALL_DIR}/modules/monitor.sh"

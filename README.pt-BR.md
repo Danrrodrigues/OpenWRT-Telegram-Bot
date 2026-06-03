@@ -73,13 +73,22 @@ Veja o guia completo em [docs/installation.md](docs/installation.md).
 |---------|-----------|
 | `/devices` | Lista dispositivos conectados |
 | `/kick <MAC ou IP>` | Desconecta do Wi-Fi |
+| `/name <MAC> <hostname>` | Salva um nome amigável de dispositivo por MAC |
 | `/block <MAC>` | Bloqueia permanentemente |
 | `/unblock <MAC>` | Remove o bloqueio |
 | `/limit <MAC> <↓Mbps> <↑Mbps>` | Define limite de velocidade |
 | `/unlimit <MAC>` | Remove o limite |
 | `/status` | Status do roteador |
-| `/alerts on\|off` | Ativa/desativa alertas de novo dispositivo |
+| `/alerts off\|known\|unknown\|all` | Define o modo de alerta de dispositivos |
 | `/help` | Mostra todos os comandos |
+
+Exemplo:
+
+```sh
+/name 92:27:f0:1a:66:6c celular-marcia
+```
+
+Os nomes dos dispositivos sao resolvidos nesta ordem: nome estatico do host DHCP do OpenWRT para o MAC, hostname do lease DHCP e, por fim, `Unknown`.
 
 Veja exemplos em [docs/commands.md](docs/commands.md).
 
@@ -91,6 +100,7 @@ Veja exemplos em [docs/commands.md](docs/commands.md).
 src/
 ├── bot.sh            — Ponto de entrada: loop daemon ou execução por cron
 ├── core/
+│   ├── device_identity.sh   — Nomes estáticos DHCP + renderização de hostname
 │   ├── telegram.sh   — API do Telegram (getUpdates, sendMessage)
 │   ├── config.sh     — Leitura/escrita de config UCI
 │   └── logger.sh     — Log para syslog e arquivo
@@ -113,7 +123,7 @@ src/
 # Ver configuração atual
 uci show telegram-bot
 
-# Mudar modo de alerta (all = todos / unknown = apenas novos)
+# Mudar modo de alerta (off / known / unknown / all)
 uci set telegram-bot.bot.alert_mode='unknown'
 uci commit telegram-bot
 
@@ -125,6 +135,12 @@ logread -e telegram-bot
 ```
 
 Veja todas as opções em [docs/configuration.md](docs/configuration.md).
+
+---
+
+## Mudancas Recentes
+
+- `v0.2.1` — Adiciona modos de alerta (`off|known|unknown|all`), detecção ativa de presença Wi-Fi para alertas de reconexão, `/name <MAC> <hostname>`, prioridade para nome estático do OpenWRT e a correção do instalador para `core/device_identity.sh`.
 
 ---
 

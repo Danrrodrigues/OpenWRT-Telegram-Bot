@@ -16,8 +16,7 @@ devices_list() {
     while IFS= read -r line; do
         mac=$(echo "$line" | awk '{print $2}')
         ip=$(echo "$line" | awk '{print $3}')
-        hostname=$(echo "$line" | awk '{print $4}')
-        [ "$hostname" = "*" ] && hostname="Unknown"
+        hostname=$(device_identity_hostname "$mac")
 
         count=$((count + 1))
         output="${output}<b>${count}.</b> ${hostname}\n   IP: <code>${ip}</code>\n   MAC: <code>${mac}</code>\n\n"
@@ -56,7 +55,7 @@ devices_kick() {
     done
 
     if [ "$kicked" -gt 0 ]; then
-        hostname=$(_devices_hostname "$mac")
+        hostname=$(device_identity_hostname "$mac")
         telegram_send "$chat_id" "✅ Kicked <b>${hostname}</b> (<code>${mac}</code>) from Wi-Fi."
         log_info "devices: kicked $mac ($hostname)"
     else
@@ -94,9 +93,35 @@ Example: <code>/block AA:BB:CC:DD:EE:FF</code>"
 
     config_add_list "blocked" "$mac"
 
-    hostname=$(_devices_hostname "$mac")
+    hostname=$(device_identity_hostname "$mac")
     telegram_send "$chat_id" "🚫 Blocked <b>${hostname}</b> (<code>${mac}</code>). Device cannot reconnect."
     log_info "devices: blocked $mac ($hostname)"
+}
+
+# Command: /name <mac> <hostname>
+devices_set_name() {
+    local chat_id="$1"
+    local args="$2"
+    local mac hostname escaped_hostname
+
+    mac=$(printf '%s\n' "$args" | awk '{print $1}')
+    hostname=$(printf '%s\n' "$args" | sed 's/^[[:space:]]*//; s/^[^[:space:]]*[[:space:]]*//; s/[[:space:]]*$//')
+
+    if ! printf '%s\n' "$mac" | grep -Eq '^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$' || [ -z "$hostname" ] || [ "$hostname" = "$mac" ]; then
+        telegram_send "$chat_id" "Usage: <code>/name &lt;MAC&gt; &lt;hostname&gt;</code>"
+        return
+    fi
+
+    mac=$(printf '%s\n' "$mac" | tr 'A-Z' 'a-z')
+    escaped_hostname=$(device_identity_escape_html "$hostname")
+
+    if device_identity_set_static_name "$mac" "$hostname"; then
+        telegram_send "$chat_id" "✅ Name set for <code>${mac}</code>: <b>${escaped_hostname}</b>."
+        log_info "devices: named $mac as $hostname"
+        return
+    fi
+
+    telegram_send "$chat_id" "❌ Could not save name for <code>${mac}</code>."
 }
 
 # Command: /unblock <mac>
@@ -163,9 +188,5 @@ _devices_resolve_mac() {
 }
 
 _devices_hostname() {
-    local mac="$1"
-    local name
-    name=$(awk -v m="$mac" 'tolower($2)==tolower(m){print $4}' "$LEASES_FILE" 2>/dev/null | head -1)
-    [ -z "$name" ] || [ "$name" = "*" ] && name="Unknown"
-    echo "$name"
+    device_identity_hostname "$1"
 }

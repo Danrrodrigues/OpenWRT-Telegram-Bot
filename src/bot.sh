@@ -1,7 +1,7 @@
 #!/bin/sh
 # OpenWRT Telegram Bot — main entry point
 
-VERSION="0.2.0"
+VERSION="0.2.1"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -11,6 +11,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "${SCRIPT_DIR}/core/logger.sh"
 # shellcheck source=core/telegram.sh
 . "${SCRIPT_DIR}/core/telegram.sh"
+# shellcheck source=core/device_identity.sh
+. "${SCRIPT_DIR}/core/device_identity.sh"
 # shellcheck source=modules/monitor.sh
 . "${SCRIPT_DIR}/modules/monitor.sh"
 # shellcheck source=modules/devices.sh
@@ -52,7 +54,7 @@ _bot_init() {
     devices_restore_blocks >/dev/null 2>&1
     bandwidth_restore_limits
 
-    log_info "bot: started v${VERSION} (mode=${BOT_MODE} alerts=${BOT_ALERTS})"
+    log_info "bot: started v${VERSION} (mode=${BOT_MODE} alert_mode=${BOT_ALERT_MODE})"
 }
 
 _bot_dispatch() {
@@ -62,8 +64,7 @@ _bot_dispatch() {
 
     cmd=$(echo "$text" | awk '{print $1}' | tr 'A-Z' 'a-z')
     cmd=$(echo "$cmd" | sed 's/@.*//')
-    args=$(echo "$text" | cut -d' ' -f2-)
-    [ "$args" = "$text" ] && args=""
+    args=$(printf '%s\n' "$text" | sed 's/^[^[:space:]]*[[:space:]]*//')
 
     log_info "bot: command $cmd from $chat_id"
 
@@ -79,6 +80,9 @@ _bot_dispatch() {
             ;;
         /block)
             devices_block "$chat_id" "$args"
+            ;;
+        /name)
+            devices_set_name "$chat_id" "$args"
             ;;
         /unblock)
             devices_unblock "$chat_id" "$args"
@@ -112,11 +116,12 @@ _bot_send_help() {
 <b>Network monitoring:</b>
 /devices — List connected devices
 /status — Router status (CPU, RAM, uptime)
-/alerts on|off — Toggle new device alerts
+/alerts off|known|unknown|all — Set device alert mode
 
 <b>Device control:</b>
 /kick &lt;MAC or IP&gt; — Disconnect from Wi-Fi
 /block &lt;MAC&gt; — Block device permanently
+/name &lt;MAC&gt; &lt;hostname&gt; — Save a device name by MAC
 /unblock &lt;MAC&gt; — Remove block
 
 <b>Speed limiting:</b>

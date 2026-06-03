@@ -67,20 +67,41 @@ config_del_list() {
 
 # Load all config into env vars with defaults
 config_load() {
+    local legacy_alerts
+
     BOT_TOKEN=$(config_get "token")
     BOT_CHAT_IDS=$(config_get "chat_ids")
     BOT_MODE=$(config_get "mode")
-    BOT_ALERTS=$(config_get "alerts")
     BOT_ALERT_MODE=$(config_get "alert_mode")
     BOT_POLL_INTERVAL=$(config_get "poll_interval")
     LOG_LEVEL=$(config_get "log_level")
+    legacy_alerts=$(config_get "alerts")
 
     # Defaults
     BOT_MODE="${BOT_MODE:-daemon}"
-    BOT_ALERTS="${BOT_ALERTS:-1}"
-    BOT_ALERT_MODE="${BOT_ALERT_MODE:-all}"
     BOT_POLL_INTERVAL="${BOT_POLL_INTERVAL:-30}"
     LOG_LEVEL="${LOG_LEVEL:-info}"
+
+    case "$BOT_ALERT_MODE" in
+        off|known|unknown|all)
+            ;;
+        "")
+            if [ "$legacy_alerts" = "0" ]; then
+                BOT_ALERT_MODE="off"
+            else
+                BOT_ALERT_MODE="all"
+            fi
+            ;;
+        *)
+            BOT_ALERT_MODE="all"
+            ;;
+    esac
+
+    if [ "$BOT_ALERT_MODE" = "off" ]; then
+        BOT_ALERTS=0
+    else
+        BOT_ALERTS=1
+    fi
 }
 
 # Returns 0 if chat_id is authorized
