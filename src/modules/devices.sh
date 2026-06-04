@@ -9,7 +9,7 @@ LEASES_FILE="/tmp/dhcp.leases"
 # Command: /devices
 devices_list() {
     local chat_id="$1"
-    local output="<b>Dispositivos na Rede</b>\n\n"
+    local output="<b>Network Devices</b>\n\n"
     local count=0
     local mac ip hostname badge
     local wifi_macs
@@ -23,7 +23,7 @@ devices_list() {
         if echo "$wifi_macs" | grep -qx "$(echo "$mac" | tr 'A-Z' 'a-z')"; then
             badge="📶 Wi-Fi"
         else
-            badge="🔌 Cabeado / Offline"
+            badge="🔌 Wired / Offline"
         fi
 
         count=$((count + 1))
@@ -31,7 +31,7 @@ devices_list() {
     done < "$LEASES_FILE"
 
     if [ "$count" -eq 0 ]; then
-        telegram_send "$chat_id" "Nenhum dispositivo encontrado nos leases DHCP."
+        telegram_send "$chat_id" "No devices found in DHCP leases."
         return
     fi
 
@@ -57,7 +57,7 @@ devices_kick() {
 
     if ! _devices_wifi_macs | grep -qx "$mac"; then
         hostname=$(device_identity_hostname "$mac")
-        telegram_send "$chat_id" "⚠️ <b>${hostname}</b> (<code>${mac}</code>) não está conectado via Wi-Fi.\nUse /devices para ver o status atual do dispositivo."
+        telegram_send "$chat_id" "⚠️ <b>${hostname}</b> (<code>${mac}</code>) is not connected via Wi-Fi.\nUse /devices to check its current status."
         return
     fi
 
