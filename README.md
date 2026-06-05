@@ -101,6 +101,17 @@ Device names resolve in this order: static OpenWRT DHCP host name for the MAC, D
 
 See [docs/commands.md](docs/commands.md) for examples.
 
+### Command menu and automatic notifications
+
+- **Automatic command menu** — on install/update, the bot registers the command
+  list with Telegram (via `setMyCommands`) in the configured language. No need to
+  set commands manually in BotFather.
+- **Post-update notice** — when a new version is installed (via SSH or `/update`),
+  the bot sends a confirmation: *"✅ Bot updated to vX"*.
+- **Daily update check** — every day at **08:00** (router local time), the bot
+  checks for a newer version and, if found, suggests updating. It only suggests;
+  it never updates itself.
+
 ---
 
 ## Architecture
@@ -110,14 +121,19 @@ src/
 ├── bot.sh            — Entry point: daemon loop or cron runner
 ├── core/
 │   ├── device_identity.sh — Static DHCP host names + hostname rendering
-│   ├── telegram.sh   — Telegram API (getUpdates, sendMessage)
+│   ├── telegram.sh   — Telegram API (getUpdates, sendMessage, setMyCommands)
 │   ├── config.sh     — UCI config read/write
+│   ├── i18n.sh       — Language loader (en/pt)
 │   └── logger.sh     — Logging to syslog + file
+├── lang/
+│   ├── en.sh         — English strings + command descriptions
+│   └── pt.sh         — Portuguese strings + command descriptions
 └── modules/
     ├── monitor.sh    — New device detection (/tmp/dhcp.leases)
     ├── devices.sh    — List / kick / block / status
     ├── bandwidth.sh  — Speed limiting (nft-qos or tc)
-    └── updater.sh    — Remote update and rollback via Telegram
+    ├── updater.sh    — Remote update and rollback via Telegram
+    └── notify.sh     — Automatic command menu + daily version check
 ```
 
 - **Zero extra packages** — only `curl` and `jsonfilter` are required
@@ -137,6 +153,10 @@ uci show telegram-bot
 uci set telegram-bot.bot.alert_mode='unknown'
 uci commit telegram-bot
 
+# Change language (en / pt)
+uci set telegram-bot.bot.lang='en'
+uci commit telegram-bot
+
 # Restart service
 /etc/init.d/telegram-bot restart
 
@@ -150,6 +170,7 @@ See [docs/configuration.md](docs/configuration.md) for all options.
 
 ## Changelog
 
+- `v0.3.0` — Automatic command menu (`setMyCommands`), post-update notice, daily new-version check at 08:00, and an internationalization base (en/pt) with the `lang` option.
 - `v0.2.2` — Fixed all shellcheck warnings across the codebase (real `A && B || C` bugs, non-POSIX `echo -n`, dead test code), pinned CI shellcheck to v0.11.0 to match the local pre-push hook, and added a pre-push hook that runs shellcheck before pushing.
 - `v0.2.1` — Added device alert modes (`off|known|unknown|all`), active Wi-Fi presence detection for reconnect alerts, `/name <MAC> <hostname>`, static OpenWRT hostname priority, and the installer fix for `core/device_identity.sh`.
 

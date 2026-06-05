@@ -77,10 +77,24 @@ _get_mode() {
     esac
 }
 
+_get_lang() {
+    echo "" >/dev/tty
+    echo "  Language / Idioma:" >/dev/tty
+    echo "    e) English (default)" >/dev/tty
+    echo "    p) Português" >/dev/tty
+    printf '%s' "  Choice [e]: " >/dev/tty
+    read -r choice </dev/tty
+    case "$choice" in
+        p|pt|pt-br|portugues|português) echo "pt" ;;
+        *)                              echo "en" ;;
+    esac
+}
+
 _write_uci_config() {
     local token="$1"
     local chat_id="$2"
     local mode="$3"
+    local lang="${4:-en}"
 
     _info "Writing config to ${CONFIG_FILE}..."
 
@@ -93,6 +107,7 @@ set telegram-bot.bot=telegram
 set telegram-bot.bot.token='${token}'
 set telegram-bot.bot.chat_ids='${chat_id}'
 set telegram-bot.bot.mode='${mode}'
+set telegram-bot.bot.lang='${lang}'
 set telegram-bot.bot.alert_mode='all'
 set telegram-bot.bot.poll_interval='30'
 set telegram-bot.bot.log_level='info'
@@ -109,17 +124,21 @@ EOF
 
 _copy_files() {
     _info "Installing scripts to ${INSTALL_DIR}..."
-    mkdir -p "${INSTALL_DIR}/core" "${INSTALL_DIR}/modules"
+    mkdir -p "${INSTALL_DIR}/core" "${INSTALL_DIR}/modules" "${INSTALL_DIR}/lang"
 
     cp "${SCRIPT_DIR}/src/bot.sh"                "${INSTALL_DIR}/bot.sh"
     cp "${SCRIPT_DIR}/src/core/config.sh"        "${INSTALL_DIR}/core/config.sh"
     cp "${SCRIPT_DIR}/src/core/device_identity.sh" "${INSTALL_DIR}/core/device_identity.sh"
     cp "${SCRIPT_DIR}/src/core/logger.sh"        "${INSTALL_DIR}/core/logger.sh"
+    cp "${SCRIPT_DIR}/src/core/i18n.sh"          "${INSTALL_DIR}/core/i18n.sh"
     cp "${SCRIPT_DIR}/src/core/telegram.sh"      "${INSTALL_DIR}/core/telegram.sh"
     cp "${SCRIPT_DIR}/src/modules/monitor.sh"    "${INSTALL_DIR}/modules/monitor.sh"
     cp "${SCRIPT_DIR}/src/modules/devices.sh"    "${INSTALL_DIR}/modules/devices.sh"
     cp "${SCRIPT_DIR}/src/modules/bandwidth.sh"  "${INSTALL_DIR}/modules/bandwidth.sh"
     cp "${SCRIPT_DIR}/src/modules/updater.sh"    "${INSTALL_DIR}/modules/updater.sh"
+    cp "${SCRIPT_DIR}/src/modules/notify.sh"     "${INSTALL_DIR}/modules/notify.sh"
+    cp "${SCRIPT_DIR}/src/lang/en.sh"            "${INSTALL_DIR}/lang/en.sh"
+    cp "${SCRIPT_DIR}/src/lang/pt.sh"            "${INSTALL_DIR}/lang/pt.sh"
 
     # Keep install/uninstall scripts accessible after download folder is gone
     cp "${SCRIPT_DIR}/install.sh"   "${INSTALL_DIR}/install.sh"
@@ -264,8 +283,9 @@ _reconfigure() {
     token=$(_get_token)
     chat_id=$(_get_chat_id)
     mode=$(_get_mode)
+    lang=$(_get_lang)
 
-    _write_uci_config "$token" "$chat_id" "$mode"
+    _write_uci_config "$token" "$chat_id" "$mode" "$lang"
 
     _info "Restarting service..."
     if [ -f "$SERVICE_FILE" ] && "$SERVICE_FILE" restart 2>/dev/null; then
@@ -325,11 +345,12 @@ main() {
             token=$(_get_token)
             chat_id=$(_get_chat_id)
             mode=$(_get_mode)
+            lang=$(_get_lang)
 
             echo ""
             _info "--- Installing ---"
             _copy_files
-            _write_uci_config "$token" "$chat_id" "$mode"
+            _write_uci_config "$token" "$chat_id" "$mode" "$lang"
             _setup_nftables
 
             if [ "$mode" = "daemon" ]; then
@@ -344,6 +365,7 @@ main() {
             echo "  Token:   [configured]"
             echo "  Chat ID: ${chat_id}"
             echo "  Mode:    ${mode}"
+            echo "  Lang:    ${lang}"
             echo ""
             echo "  Send /start to your bot on Telegram to test."
             echo "  Logs: logread -e telegram-bot"

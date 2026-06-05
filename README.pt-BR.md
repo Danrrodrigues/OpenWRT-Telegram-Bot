@@ -101,6 +101,17 @@ Os nomes dos dispositivos sao resolvidos nesta ordem: nome estatico do host DHCP
 
 Veja exemplos em [docs/commands.md](docs/commands.md).
 
+### Menu de comandos e notificações automáticas
+
+- **Menu de comandos automático** — ao instalar/atualizar, o bot registra a lista
+  de comandos no Telegram (via `setMyCommands`), no idioma configurado. Não
+  precisa configurar comandos manualmente no BotFather.
+- **Aviso pós-atualização** — quando uma versão nova é instalada (por SSH ou por
+  `/update`), o bot envia uma mensagem confirmando: *"✅ Bot atualizado para vX"*.
+- **Aviso diário de versão nova** — todo dia às **8h** (horário local do roteador),
+  o bot verifica se há versão mais recente e, se houver, sugere atualizar. Ele
+  apenas avisa; nunca atualiza sozinho.
+
 ---
 
 ## Arquitetura
@@ -110,14 +121,19 @@ src/
 ├── bot.sh            — Ponto de entrada: loop daemon ou execução por cron
 ├── core/
 │   ├── device_identity.sh   — Nomes estáticos DHCP + renderização de hostname
-│   ├── telegram.sh   — API do Telegram (getUpdates, sendMessage)
+│   ├── telegram.sh   — API do Telegram (getUpdates, sendMessage, setMyCommands)
 │   ├── config.sh     — Leitura/escrita de config UCI
+│   ├── i18n.sh       — Carregador de idioma (en/pt)
 │   └── logger.sh     — Log para syslog e arquivo
+├── lang/
+│   ├── en.sh         — Textos em inglês + descrições dos comandos
+│   └── pt.sh         — Textos em português + descrições dos comandos
 └── modules/
     ├── monitor.sh    — Detecção de novo dispositivo (/tmp/dhcp.leases)
     ├── devices.sh    — Listar / kick / bloquear / status
     ├── bandwidth.sh  — Limite de velocidade (nft-qos ou tc)
-    └── updater.sh    — Atualização e rollback remotos via Telegram
+    ├── updater.sh    — Atualização e rollback remotos via Telegram
+    └── notify.sh     — Menu de comandos automático + aviso diário de versão
 ```
 
 - **Zero pacotes extras** — apenas `curl` e `jsonfilter` são necessários
@@ -137,6 +153,10 @@ uci show telegram-bot
 uci set telegram-bot.bot.alert_mode='unknown'
 uci commit telegram-bot
 
+# Mudar idioma (en / pt)
+uci set telegram-bot.bot.lang='pt'
+uci commit telegram-bot
+
 # Reiniciar serviço
 /etc/init.d/telegram-bot restart
 
@@ -150,6 +170,7 @@ Veja todas as opções em [docs/configuration.md](docs/configuration.md).
 
 ## Mudancas Recentes
 
+- `v0.3.0` — Menu de comandos automático (`setMyCommands`), aviso pós-atualização, aviso diário de versão nova às 8h e base de internacionalização (en/pt) com a opção `lang`.
 - `v0.2.2` — Corrige todos os avisos do shellcheck no projeto (bugs reais de `A && B || C`, `echo -n` não-POSIX, código de teste morto), fixa o shellcheck do CI na v0.11.0 para casar com o hook de pre-push local e adiciona um hook de pre-push que roda o shellcheck antes do push.
 - `v0.2.1` — Adiciona modos de alerta (`off|known|unknown|all`), detecção ativa de presença Wi-Fi para alertas de reconexão, `/name <MAC> <hostname>`, prioridade para nome estático do OpenWRT e a correção do instalador para `core/device_identity.sh`.
 
