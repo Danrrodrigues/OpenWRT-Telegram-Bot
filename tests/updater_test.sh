@@ -10,7 +10,6 @@ mkdir -p "$TEST_TMP"
 # Bot context required by the module
 VERSION="0.2.2"
 BOT_CHAT_IDS="12345"
-BOT_TOKEN="test-token"
 
 MESSAGES=""
 
