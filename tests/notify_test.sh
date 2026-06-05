@@ -10,6 +10,7 @@ mkdir -p "$TEST_TMP"
 # Bot context required by the module
 VERSION="0.2.2"
 BOT_CHAT_IDS="12345 67890"
+BOT_LANG="en"
 
 # i18n strings normally provided by the sourced language file
 T_UPDATED="Bot updated to v%s"
@@ -31,7 +32,8 @@ telegram_send() {
 "
 }
 
-telegram_set_commands() { SET_COMMANDS_CALLED=1; return 0; }
+SET_COMMANDS_RC=0
+telegram_set_commands() { SET_COMMANDS_CALLED=1; return "$SET_COMMANDS_RC"; }
 
 _updater_remote_version() { echo "$MOCK_REMOTE"; }
 
@@ -88,6 +90,8 @@ run_test() {
     shift
     MESSAGES=""
     SET_COMMANDS_CALLED=0
+    SET_COMMANDS_RC=0
+    BOT_LANG="en"
     rm -rf "$NOTIFY_STATE_DIR"
     if "$@"; then
         printf 'PASS: %s\n' "$name"
@@ -103,26 +107,44 @@ test_fresh_install_registers_menu_no_message() {
     notify_check_version_change
     assert_equals "$SET_COMMANDS_CALLED" "1" "menu should be registered on first run" || return 1
     assert_not_contains "$MESSAGES" "updated" "no update message on fresh install" || return 1
-    assert_equals "$(cat "$NOTIFY_SEEN_VERSION_FILE")" "0.2.2" "seen version recorded" || return 1
+    assert_equals "$(cat "$NOTIFY_SEEN_VERSION_FILE")" "0.2.2|en" "seen version+lang recorded" || return 1
 }
 
 test_version_bump_announces_to_all_chats() {
     mkdir -p "$NOTIFY_STATE_DIR"
-    echo "0.2.1" > "$NOTIFY_SEEN_VERSION_FILE"
+    echo "0.2.1|en" > "$NOTIFY_SEEN_VERSION_FILE"
     notify_check_version_change
     assert_equals "$SET_COMMANDS_CALLED" "1" "menu re-registered on update" || return 1
     assert_contains "$MESSAGES" "Bot updated to v0.2.2" "announces new version" || return 1
     assert_contains "$MESSAGES" "12345|" "notifies first chat" || return 1
     assert_contains "$MESSAGES" "67890|" "notifies second chat" || return 1
-    assert_equals "$(cat "$NOTIFY_SEEN_VERSION_FILE")" "0.2.2" "seen version updated" || return 1
+    assert_equals "$(cat "$NOTIFY_SEEN_VERSION_FILE")" "0.2.2|en" "seen version updated" || return 1
 }
 
 test_same_version_no_action() {
     mkdir -p "$NOTIFY_STATE_DIR"
-    echo "0.2.2" > "$NOTIFY_SEEN_VERSION_FILE"
+    echo "0.2.2|en" > "$NOTIFY_SEEN_VERSION_FILE"
     notify_check_version_change
-    assert_equals "$SET_COMMANDS_CALLED" "0" "menu not touched on same version" || return 1
+    assert_equals "$SET_COMMANDS_CALLED" "0" "menu not touched on same version+lang" || return 1
     assert_equals "$MESSAGES" "" "no message on same version" || return 1
+}
+
+test_language_change_reregisters_menu_no_announce() {
+    mkdir -p "$NOTIFY_STATE_DIR"
+    echo "0.2.2|en" > "$NOTIFY_SEEN_VERSION_FILE"
+    BOT_LANG="pt"
+    notify_check_version_change
+    assert_equals "$SET_COMMANDS_CALLED" "1" "menu re-registered after language change" || return 1
+    assert_equals "$MESSAGES" "" "no update message on language-only change" || return 1
+    assert_equals "$(cat "$NOTIFY_SEEN_VERSION_FILE")" "0.2.2|pt" "seen lang updated" || return 1
+}
+
+test_registration_failure_does_not_persist_state() {
+    SET_COMMANDS_RC=1
+    notify_check_version_change && return 1   # should return non-zero
+    assert_equals "$SET_COMMANDS_CALLED" "1" "registration was attempted" || return 1
+    assert_file_absent "$NOTIFY_SEEN_VERSION_FILE" "state not persisted on failure (retry next start)" || return 1
+    assert_equals "$MESSAGES" "" "no announcement when registration failed" || return 1
 }
 
 # ---- daily check tests (B) ----
@@ -176,6 +198,8 @@ test_daily_network_failure_no_message_but_records() {
 run_test "version: fresh install registers menu, no message" test_fresh_install_registers_menu_no_message
 run_test "version: bump announces to all chats"              test_version_bump_announces_to_all_chats
 run_test "version: same version is a no-op"                  test_same_version_no_action
+run_test "version: language change re-registers menu"       test_language_change_reregisters_menu_no_announce
+run_test "version: registration failure does not persist"  test_registration_failure_does_not_persist_state
 run_test "daily: before 08:00 is a no-op"                    test_daily_before_hour_is_noop
 run_test "daily: already checked today is a no-op"           test_daily_already_checked_today_is_noop
 run_test "daily: newer version suggests update"             test_daily_newer_version_suggests_update

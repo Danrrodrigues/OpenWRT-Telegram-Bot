@@ -25,26 +25,37 @@ _notify_broadcast() {
 notify_check_version_change() {
     mkdir -p "$NOTIFY_STATE_DIR" 2>/dev/null || true
 
-    local seen
+    # State tracks both version and language so a runtime language change also
+    # refreshes the menu. Stored as "VERSION|LANG".
+    local seen current seen_version
     seen=$(cat "$NOTIFY_SEEN_VERSION_FILE" 2>/dev/null)
+    current="${VERSION}|${BOT_LANG:-en}"
 
-    [ "$seen" = "$VERSION" ] && return 0
+    [ "$seen" = "$current" ] && return 0
 
-    # Always (re)register the command menu for the current version/language.
-    telegram_set_commands
+    # (Re)register the command menu for the current version/language. Persist the
+    # new state only on success, so a transient Telegram/API failure is retried
+    # on the next start instead of being silently marked as handled.
+    if ! telegram_set_commands; then
+        log_warn "notify: command menu registration failed; will retry next start"
+        return 1
+    fi
 
-    # Announce only when there was a previous version (i.e. a real update),
-    # not on a fresh install.
-    if [ -n "$seen" ]; then
+    # Announce only on a real version upgrade — not on a fresh install and not on
+    # a language-only change.
+    seen_version="${seen%%|*}"
+    if [ -n "$seen_version" ] && [ "$seen_version" != "$VERSION" ]; then
         # T_* come from the sourced language file (see i18n.sh).
         # shellcheck disable=SC2059,SC2154
         _notify_broadcast "$(printf "$T_UPDATED" "$VERSION")"
-        log_info "notify: announced update $seen -> $VERSION"
+        log_info "notify: announced update $seen_version -> $VERSION"
+    elif [ -z "$seen" ]; then
+        log_info "notify: first run, registered command menu for v$VERSION (${BOT_LANG:-en})"
     else
-        log_info "notify: first run, registered command menu for v$VERSION"
+        log_info "notify: refreshed command menu (lang=${BOT_LANG:-en})"
     fi
 
-    echo "$VERSION" > "$NOTIFY_SEEN_VERSION_FILE"
+    echo "$current" > "$NOTIFY_SEEN_VERSION_FILE"
 }
 
 # Self-gating daily check. Safe to call on every loop iteration / cron run:
