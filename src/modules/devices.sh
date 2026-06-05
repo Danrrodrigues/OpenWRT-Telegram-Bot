@@ -9,17 +9,25 @@ LEASES_FILE="/tmp/dhcp.leases"
 # Command: /devices
 devices_list() {
     local chat_id="$1"
-    local output="<b>Connected Devices</b>\n\n"
+    local output="<b>Network Devices</b>\n\n"
     local count=0
-    local mac ip hostname
+    local mac ip hostname badge
+    local wifi_macs
+    wifi_macs=$(_devices_wifi_macs)
 
     while IFS= read -r line; do
         mac=$(echo "$line" | awk '{print $2}')
         ip=$(echo "$line" | awk '{print $3}')
         hostname=$(device_identity_hostname "$mac")
 
+        if echo "$wifi_macs" | grep -qx "$(echo "$mac" | tr 'A-Z' 'a-z')"; then
+            badge="📶 Wi-Fi"
+        else
+            badge="🔌 Wired / Offline"
+        fi
+
         count=$((count + 1))
-        output="${output}<b>${count}.</b> ${hostname}\n   IP: <code>${ip}</code>\n   MAC: <code>${mac}</code>\n\n"
+        output="${output}<b>${count}.</b> ${hostname}  <i>${badge}</i>\n   IP: <code>${ip}</code>\n   MAC: <code>${mac}</code>\n\n"
     done < "$LEASES_FILE"
 
     if [ "$count" -eq 0 ]; then
@@ -44,6 +52,12 @@ devices_kick() {
     mac=$(_devices_resolve_mac "$target")
     if [ -z "$mac" ]; then
         telegram_send "$chat_id" "❌ Device not found: <code>${target}</code>"
+        return
+    fi
+
+    if ! _devices_wifi_macs | grep -qx "$mac"; then
+        hostname=$(device_identity_hostname "$mac")
+        telegram_send "$chat_id" "⚠️ <b>${hostname}</b> (<code>${mac}</code>) is not connected via Wi-Fi.\nUse /devices to check its current status."
         return
     fi
 
@@ -184,6 +198,13 @@ devices_status() {
 }
 
 # ---- helpers ----
+
+_devices_wifi_macs() {
+    local iface
+    iw dev 2>/dev/null | awk '$1=="Interface"{print $2}' | while IFS= read -r iface; do
+        iw dev "$iface" station dump 2>/dev/null | awk '$1=="Station"{print tolower($2)}'
+    done | awk 'NF && !seen[$0]++'
+}
 
 _devices_resolve_mac() {
     local target="$1"
