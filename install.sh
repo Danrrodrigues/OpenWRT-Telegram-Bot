@@ -119,6 +119,7 @@ _copy_files() {
     cp "${SCRIPT_DIR}/src/modules/monitor.sh"    "${INSTALL_DIR}/modules/monitor.sh"
     cp "${SCRIPT_DIR}/src/modules/devices.sh"    "${INSTALL_DIR}/modules/devices.sh"
     cp "${SCRIPT_DIR}/src/modules/bandwidth.sh"  "${INSTALL_DIR}/modules/bandwidth.sh"
+    cp "${SCRIPT_DIR}/src/modules/updater.sh"    "${INSTALL_DIR}/modules/updater.sh"
 
     # Keep install/uninstall scripts accessible after download folder is gone
     cp "${SCRIPT_DIR}/install.sh"   "${INSTALL_DIR}/install.sh"

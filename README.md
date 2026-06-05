@@ -17,6 +17,7 @@ Control and monitor your home network directly from Telegram. Runs as a lightwei
 - [x] 🚫 Block a device permanently (persists across reboots)
 - [x] 📶 Limit a device's download/upload speed
 - [x] 📊 Router status (CPU, RAM, uptime)
+- [x] 🔄 Update and rollback the bot remotely via Telegram
 - [ ] 📈 Per-device bandwidth usage (planned)
 - [ ] ⏰ Scheduled blocks (planned)
 
@@ -50,7 +51,13 @@ cd OpenWRT-Telegram-Bot-main
 sh install.sh
 ```
 
-**To update** (config is preserved):
+**To update via Telegram** (no SSH needed):
+```
+/update
+/update confirm
+```
+
+**To update via SSH** (config is preserved):
 ```sh
 cd /tmp
 curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/heads/main.tar.gz -o bot.tar.gz
@@ -80,6 +87,8 @@ See [docs/installation.md](docs/installation.md) for the full guide.
 | `/unlimit <MAC>` | Remove speed limit |
 | `/status` | Router status |
 | `/alerts off\|known\|unknown\|all` | Set device alert mode |
+| `/update` | Check for updates (`/update confirm` to apply) |
+| `/rollback` | Restore previous version (`/rollback confirm` to apply) |
 | `/help` | Show all commands |
 
 Example:
@@ -107,7 +116,8 @@ src/
 └── modules/
     ├── monitor.sh    — New device detection (/tmp/dhcp.leases)
     ├── devices.sh    — List / kick / block / status
-    └── bandwidth.sh  — Speed limiting (nft-qos or tc)
+    ├── bandwidth.sh  — Speed limiting (nft-qos or tc)
+    └── updater.sh    — Remote update and rollback via Telegram
 ```
 
 - **Zero extra packages** — only `curl` and `jsonfilter` are required
