@@ -170,6 +170,7 @@ See [docs/configuration.md](docs/configuration.md) for all options.
 
 ## Changelog
 
+- `v0.3.1` — Fixed remote `/update` and `/rollback` aborting mid-way: the updater ran as a child of the bot service, so restarting the service killed the updater itself before it finished, leaving the bot stopped and half-updated. The update now copies files before restarting and runs detached from the service process tree (`setsid`).
 - `v0.3.0` — Automatic command menu (`setMyCommands`), post-update notice, daily new-version check at 08:00, and an internationalization base (en/pt) with the `lang` option.
 - `v0.2.2` — Fixed all shellcheck warnings across the codebase (real `A && B || C` bugs, non-POSIX `echo -n`, dead test code), pinned CI shellcheck to v0.11.0 to match the local pre-push hook, and added a pre-push hook that runs shellcheck before pushing.
 - `v0.2.1` — Added device alert modes (`off|known|unknown|all`), active Wi-Fi presence detection for reconnect alerts, `/name <MAC> <hostname>`, static OpenWRT hostname priority, and the installer fix for `core/device_identity.sh`.

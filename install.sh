@@ -4,9 +4,10 @@
 
 set -e
 
-INSTALL_DIR="/usr/lib/telegram-bot"
-CONFIG_FILE="/etc/config/telegram-bot"
-SERVICE_FILE="/etc/init.d/telegram-bot"
+# Paths are overridable via the environment so the test suite can sandbox them.
+INSTALL_DIR="${INSTALL_DIR:-/usr/lib/telegram-bot}"
+CONFIG_FILE="${CONFIG_FILE:-/etc/config/telegram-bot}"
+SERVICE_FILE="${SERVICE_FILE:-/etc/init.d/telegram-bot}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 _info()  { echo "[INFO]  $1"; }
@@ -220,10 +221,36 @@ NFTEOF
 # ---- update ----
 
 _update() {
-    local new_version
-    new_version=$(grep '^VERSION=' "${SCRIPT_DIR}/src/bot.sh" 2>/dev/null | cut -d'"' -f2)
+    _check_root
+    _check_openwrt
 
-    local old_version
+    if [ ! -d "$INSTALL_DIR" ]; then
+        _die "Bot is not installed. Run: sh install.sh"
+    fi
+
+    # When the bot triggers /update, this script runs as a child of the
+    # telegram-bot service. Restarting the service from here makes procd kill
+    # the whole service process tree — including this very script — mid-update,
+    # which leaves the bot stopped and half-updated with no way to fix it
+    # remotely. So when we are not on an interactive terminal (i.e. launched by
+    # the bot), relaunch ourselves in a NEW session via setsid, detached from
+    # the service tree, working from a private copy of our own files so the
+    # caller is free to clean up its temp dir.
+    if [ "${TGBOT_UPDATE_DETACHED:-}" != "1" ] && [ ! -t 1 ]; then
+        if command -v setsid >/dev/null 2>&1; then
+            local self="${TGBOT_UPDATE_SELF_DIR:-/tmp/telegram-bot-update-self}"
+            rm -rf "$self"
+            cp -r "$SCRIPT_DIR" "$self"
+            _info "Detaching updater from the service process tree (setsid)..."
+            TGBOT_UPDATE_DETACHED=1 setsid sh "${self}/install.sh" update \
+                >/tmp/telegram-bot-update.log 2>&1 </dev/null &
+            return 0
+        fi
+        _warn "setsid not available — running update inline; a service restart may interrupt it"
+    fi
+
+    local new_version old_version
+    new_version=$(grep '^VERSION=' "${SCRIPT_DIR}/src/bot.sh" 2>/dev/null | cut -d'"' -f2)
     old_version=$(grep '^VERSION=' "${INSTALL_DIR}/bot.sh" 2>/dev/null | cut -d'"' -f2)
     [ -z "$old_version" ] && old_version="unknown"
 
@@ -233,27 +260,22 @@ _update() {
     echo "  New version:     ${new_version:-unknown}"
     echo ""
 
-    _check_root
-    _check_openwrt
-
-    if [ ! -d "$INSTALL_DIR" ]; then
-        _die "Bot is not installed. Run: sh install.sh"
-    fi
-
-    _info "Stopping service..."
-    if [ -f "$SERVICE_FILE" ]; then
-        "$SERVICE_FILE" stop 2>/dev/null || true
-    fi
-
+    # Copy the new files FIRST, while the service is still running. The running
+    # bot already has its code loaded in memory, so swapping files on disk is
+    # safe — and a failure here leaves the old version running instead of a
+    # stopped, half-updated one.
     _info "Updating scripts..."
     _copy_files
 
     _info "Restarting service..."
     if [ -f "$SERVICE_FILE" ]; then
-        "$SERVICE_FILE" start
+        "$SERVICE_FILE" restart
     else
         /etc/init.d/cron restart 2>/dev/null || true
     fi
+
+    # Best-effort cleanup of the private snapshot created by the detached launch.
+    [ "${TGBOT_UPDATE_DETACHED:-}" = "1" ] && rm -rf "${TGBOT_UPDATE_SELF_DIR:-/tmp/telegram-bot-update-self}"
 
     echo ""
     _info "=== Update complete! ==="
