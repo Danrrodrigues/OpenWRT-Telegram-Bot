@@ -17,6 +17,7 @@ Controle e monitore sua rede doméstica diretamente pelo Telegram. Roda como um 
 - [x] 🚫 Bloquear um dispositivo permanentemente (persiste após reinicialização)
 - [x] 📶 Limitar velocidade de download/upload de um dispositivo
 - [x] 📊 Status do roteador (CPU, RAM, tempo ligado)
+- [x] 🔄 Atualizar e fazer rollback do bot remotamente pelo Telegram
 - [ ] 📈 Uso de banda por dispositivo (planejado)
 - [ ] ⏰ Bloqueios agendados (planejado)
 
@@ -50,7 +51,13 @@ cd OpenWRT-Telegram-Bot-main
 sh install.sh
 ```
 
-**Para atualizar** (config é preservada):
+**Para atualizar pelo Telegram** (sem necessidade de SSH):
+```
+/update
+/update confirm
+```
+
+**Para atualizar via SSH** (config é preservada):
 ```sh
 cd /tmp
 curl -L https://github.com/Danrrodrigues/OpenWRT-Telegram-Bot/archive/refs/heads/main.tar.gz -o bot.tar.gz
@@ -80,6 +87,8 @@ Veja o guia completo em [docs/installation.md](docs/installation.md).
 | `/unlimit <MAC>` | Remove o limite |
 | `/status` | Status do roteador |
 | `/alerts off\|known\|unknown\|all` | Define o modo de alerta de dispositivos |
+| `/update` | Verifica atualizações (`/update confirm` para aplicar) |
+| `/rollback` | Restaura versão anterior (`/rollback confirm` para aplicar) |
 | `/help` | Mostra todos os comandos |
 
 Exemplo:
@@ -107,7 +116,8 @@ src/
 └── modules/
     ├── monitor.sh    — Detecção de novo dispositivo (/tmp/dhcp.leases)
     ├── devices.sh    — Listar / kick / bloquear / status
-    └── bandwidth.sh  — Limite de velocidade (nft-qos ou tc)
+    ├── bandwidth.sh  — Limite de velocidade (nft-qos ou tc)
+    └── updater.sh    — Atualização e rollback remotos via Telegram
 ```
 
 - **Zero pacotes extras** — apenas `curl` e `jsonfilter` são necessários

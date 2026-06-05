@@ -123,10 +123,14 @@ _updater_do_rollback() {
         sleep 3
         cp "${UPDATER_BACKUP_DIR}/bot.sh" "${UPDATER_INSTALL_DIR}/bot.sh" 2>/dev/null || true
         for f in "${UPDATER_BACKUP_DIR}/core/"*.sh; do
-            [ -f "$f" ] && cp "$f" "${UPDATER_INSTALL_DIR}/core/" 2>/dev/null || true
+            if [ -f "$f" ]; then
+                cp "$f" "${UPDATER_INSTALL_DIR}/core/" 2>/dev/null || true
+            fi
         done
         for f in "${UPDATER_BACKUP_DIR}/modules/"*.sh; do
-            [ -f "$f" ] && cp "$f" "${UPDATER_INSTALL_DIR}/modules/" 2>/dev/null || true
+            if [ -f "$f" ]; then
+                cp "$f" "${UPDATER_INSTALL_DIR}/modules/" 2>/dev/null || true
+            fi
         done
         cp "${UPDATER_BACKUP_DIR}/install.sh" "${UPDATER_INSTALL_DIR}/install.sh" 2>/dev/null || true
         cp "${UPDATER_BACKUP_DIR}/uninstall.sh" "${UPDATER_INSTALL_DIR}/uninstall.sh" 2>/dev/null || true

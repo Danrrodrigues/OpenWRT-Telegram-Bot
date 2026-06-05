@@ -18,6 +18,8 @@ All commands are sent as Telegram messages to your bot.
 | `/unblock <MAC>` | Remove permanent block | Remove bloqueio permanente |
 | `/limit <MAC> <↓Mbps> <↑Mbps>` | Set download/upload speed limit | Define limite de velocidade de download/upload |
 | `/unlimit <MAC>` | Remove speed limit | Remove limite de velocidade |
+| `/update` | Check for bot updates; add `confirm` to apply | Verifica atualizações do bot; adicione `confirm` para aplicar |
+| `/rollback` | Restore previous version; add `confirm` to apply | Restaura versão anterior; adicione `confirm` para aplicar |
 
 ## Examples / Exemplos
 
@@ -89,6 +91,30 @@ Load: 0.12 0.08 0.05
 Memory: 45/256 MB
 Connected devices: 8
 ```
+
+### /update and /rollback
+
+Check whether a newer version is available on GitHub and update without SSH access:
+
+```sh
+# See current vs available version
+/update
+
+# Apply the update (backs up current files first)
+/update confirm
+```
+
+If the update breaks something, restore the previous version:
+
+```sh
+# See which version the backup holds
+/rollback
+
+# Restore it
+/rollback confirm
+```
+
+The backup is created automatically before every `/update confirm`. Only the most recent backup is kept. Router config (`/etc/config/telegram-bot`) is never touched by either command.
 
 ## New Device Alert / Alerta de Novo Dispositivo
 
