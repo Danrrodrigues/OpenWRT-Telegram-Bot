@@ -48,7 +48,7 @@ export FALLBACK_CONFIG="/tmp/bot-test.conf"
 - **Input validation** — sanitize all arguments from Telegram messages
 - **No credentials** — never hardcode tokens or chat IDs
 
-See `.github/AGENTS.md` for the full style guide.
+See [`AGENTS.md`](AGENTS.md) for the full style guide and the guardrails AI agents must follow.
 
 ## Adding a New Command
 
