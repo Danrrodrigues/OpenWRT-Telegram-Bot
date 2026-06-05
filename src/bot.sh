@@ -19,6 +19,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "${SCRIPT_DIR}/modules/devices.sh"
 # shellcheck source=modules/bandwidth.sh
 . "${SCRIPT_DIR}/modules/bandwidth.sh"
+# shellcheck source=modules/updater.sh
+. "${SCRIPT_DIR}/modules/updater.sh"
 
 OFFSET_FILE="/tmp/telegram-bot-offset"
 
@@ -102,6 +104,12 @@ _bot_dispatch() {
         /alerts)
             monitor_alerts_toggle "$chat_id" "$args"
             ;;
+        /update)
+            updater_check "$chat_id" "$args"
+            ;;
+        /rollback)
+            updater_rollback "$chat_id" "$args"
+            ;;
         *)
             telegram_send "$chat_id" "Unknown command: <code>${cmd}</code>
 Type /help for available commands."
@@ -127,6 +135,10 @@ _bot_send_help() {
 <b>Speed limiting:</b>
 /limit &lt;MAC&gt; &lt;down Mbps&gt; &lt;up Mbps&gt; — Set speed limit
 /unlimit &lt;MAC&gt; — Remove speed limit
+
+<b>Bot management:</b>
+/update — Check for updates (add <i>confirm</i> to apply)
+/rollback — Restore previous version (add <i>confirm</i> to apply)
 
 /help — Show this message"
 }
