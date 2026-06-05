@@ -21,7 +21,19 @@ _updater_backup_current() {
 }
 
 _updater_restart_service() {
-    if [ -f "/etc/init.d/telegram-bot" ]; then
+    # This runs inside a background subshell of the bot, i.e. a child of the
+    # telegram-bot service. A plain restart would have procd kill this subshell
+    # along with the service before the restart completes. Detach the restart
+    # into a NEW session (setsid) so it survives the service going down.
+    if command -v setsid >/dev/null 2>&1; then
+        setsid sh -c '
+            if [ -f /etc/init.d/telegram-bot ]; then
+                /etc/init.d/telegram-bot restart
+            else
+                /etc/init.d/cron restart
+            fi
+        ' >/dev/null 2>&1 </dev/null &
+    elif [ -f "/etc/init.d/telegram-bot" ]; then
         /etc/init.d/telegram-bot restart 2>/dev/null || true
     else
         /etc/init.d/cron restart 2>/dev/null || true

@@ -170,6 +170,7 @@ Veja todas as opções em [docs/configuration.md](docs/configuration.md).
 
 ## Mudancas Recentes
 
+- `v0.3.1` — Corrige o `/update` e o `/rollback` remotos que abortavam no meio: o atualizador rodava como filho do serviço do bot, então reiniciar o serviço matava o próprio atualizador antes de terminar, deixando o bot parado e atualizado pela metade. Agora a atualização copia os arquivos antes de reiniciar e roda desacoplada da árvore de processos do serviço (`setsid`).
 - `v0.3.0` — Menu de comandos automático (`setMyCommands`), aviso pós-atualização, aviso diário de versão nova às 8h e base de internacionalização (en/pt) com a opção `lang`.
 - `v0.2.2` — Corrige todos os avisos do shellcheck no projeto (bugs reais de `A && B || C`, `echo -n` não-POSIX, código de teste morto), fixa o shellcheck do CI na v0.11.0 para casar com o hook de pre-push local e adiciona um hook de pre-push que roda o shellcheck antes do push.
 - `v0.2.1` — Adiciona modos de alerta (`off|known|unknown|all`), detecção ativa de presença Wi-Fi para alertas de reconexão, `/name <MAC> <hostname>`, prioridade para nome estático do OpenWRT e a correção do instalador para `core/device_identity.sh`.
