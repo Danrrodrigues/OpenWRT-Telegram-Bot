@@ -157,7 +157,7 @@ KNOWN_DEVICES_FILE="$TEST_TMP/known-devices"
 _SEEN_EVER_FILE="$TEST_TMP/seen-devices"
 
 direct_hostname_calls=$(awk 'index($0, "hostname=$(device_identity_hostname \"$mac\")") > 0 { count++ } END { print count + 0 }' "$ROOT_DIR/src/modules/devices.sh")
-assert_equals "$direct_hostname_calls" "3" "devices module should call shared resolver directly in devices_list, devices_kick, and devices_block"
+assert_equals "$direct_hostname_calls" "4" "devices module should call shared resolver directly in devices_list, devices_kick (offline warning + after kick), and devices_block"
 
 name=$(_devices_hostname "92:27:F0:1A:66:6C")
 assert_equals "$name" "celular-marcia" "devices hostname helper should use shared static hostname resolution"

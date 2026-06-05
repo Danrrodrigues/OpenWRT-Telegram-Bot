@@ -9,6 +9,7 @@ config telegram 'bot'
     option token        'YOUR_BOT_TOKEN'
     option chat_ids     '123456789'
     option mode         'daemon'
+    option lang         'en'
     option alert_mode   'all'
     option poll_interval '30'
     option log_level    'info'
@@ -55,6 +56,24 @@ uci set telegram-bot.bot.mode='daemon'
 uci commit telegram-bot
 /etc/init.d/telegram-bot restart
 ```
+
+### `lang`
+
+Bot message language: `en` (default) or `pt`. Controls the Telegram command menu
+descriptions (registered automatically via `setMyCommands`) and the update
+notification messages. Chosen at install time; changeable at runtime:
+
+```sh
+uci set telegram-bot.bot.lang='pt'
+uci commit telegram-bot
+/etc/init.d/telegram-bot restart
+```
+
+The command menu and post-update notice refresh on the next bot start after a
+version change; the menu re-registers in the configured language.
+
+To add another language, copy `src/lang/en.sh` to `src/lang/<code>.sh`, translate
+the values, and set `lang` to the new code. Missing languages fall back to `en`.
 
 ### `alert_mode`
 

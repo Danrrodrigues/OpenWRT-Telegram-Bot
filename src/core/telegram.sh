@@ -32,6 +32,42 @@ telegram_send() {
     return 0
 }
 
+# Register the bot command menu shown in Telegram clients (setMyCommands).
+# Reads command definitions from I18N_COMMANDS ("command|description" per line).
+telegram_set_commands() {
+    # I18N_COMMANDS comes from the sourced language file (see i18n.sh).
+    local commands="${I18N_COMMANDS:-}"
+    [ -z "$BOT_TOKEN" ] && { log_error "BOT_TOKEN not set"; return 1; }
+    [ -z "$commands" ] && { log_error "I18N_COMMANDS not set"; return 1; }
+
+    local json sep cmd desc ok
+    json='{"commands":['
+    sep=""
+    while IFS='|' read -r cmd desc; do
+        [ -z "$cmd" ] && continue
+        json="${json}${sep}{\"command\":\"${cmd}\",\"description\":\"${desc}\"}"
+        sep=","
+    done <<EOF
+${commands}
+EOF
+    json="${json}]}"
+
+    curl -s --max-time 10 \
+        -X POST "${TELEGRAM_API}${BOT_TOKEN}/setMyCommands" \
+        -H "Content-Type: application/json" \
+        -d "$json" \
+        > "$SEND_RESPONSE_FILE" 2>/dev/null
+
+    ok=$(jsonfilter -i "$SEND_RESPONSE_FILE" -e '@.ok' 2>/dev/null)
+    if [ "$ok" != "true" ]; then
+        local desc_err
+        desc_err=$(jsonfilter -i "$SEND_RESPONSE_FILE" -e '@.description' 2>/dev/null)
+        log_error "setMyCommands failed: ${desc_err:-unknown error}"
+        return 1
+    fi
+    return 0
+}
+
 # Long-poll for updates. Writes JSON to UPDATES_FILE.
 # Usage: telegram_get_updates <offset>
 # Returns: number of updates received

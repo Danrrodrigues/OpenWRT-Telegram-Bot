@@ -78,12 +78,14 @@ config_load() {
     BOT_ALERT_MODE=$(config_get "alert_mode")
     BOT_POLL_INTERVAL=$(config_get "poll_interval")
     LOG_LEVEL=$(config_get "log_level")
+    BOT_LANG=$(config_get "lang")
     legacy_alerts=$(config_get "alerts")
 
     # Defaults
     BOT_MODE="${BOT_MODE:-daemon}"
     BOT_POLL_INTERVAL="${BOT_POLL_INTERVAL:-30}"
     LOG_LEVEL="${LOG_LEVEL:-info}"
+    BOT_LANG="${BOT_LANG:-en}"
 
     case "$BOT_ALERT_MODE" in
         off|known|unknown|all)

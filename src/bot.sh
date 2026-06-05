@@ -1,7 +1,7 @@
 #!/bin/sh
 # OpenWRT Telegram Bot — main entry point
 
-VERSION="0.2.2"
+VERSION="0.3.0"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -9,6 +9,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "${SCRIPT_DIR}/core/config.sh"
 # shellcheck source=core/logger.sh
 . "${SCRIPT_DIR}/core/logger.sh"
+# shellcheck source=core/i18n.sh
+. "${SCRIPT_DIR}/core/i18n.sh"
 # shellcheck source=core/telegram.sh
 . "${SCRIPT_DIR}/core/telegram.sh"
 # shellcheck source=core/device_identity.sh
@@ -21,6 +23,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "${SCRIPT_DIR}/modules/bandwidth.sh"
 # shellcheck source=modules/updater.sh
 . "${SCRIPT_DIR}/modules/updater.sh"
+# shellcheck source=modules/notify.sh
+. "${SCRIPT_DIR}/modules/notify.sh"
 
 OFFSET_FILE="/tmp/telegram-bot-offset"
 
@@ -41,6 +45,7 @@ EOF
 
 _bot_init() {
     config_load
+    i18n_load
 
     if [ -z "$BOT_TOKEN" ]; then
         log_error "BOT_TOKEN not configured. Run: sh /usr/lib/telegram-bot/install.sh reconfigure"
@@ -56,7 +61,10 @@ _bot_init() {
     devices_restore_blocks >/dev/null 2>&1
     bandwidth_restore_limits
 
-    log_info "bot: started v${VERSION} (mode=${BOT_MODE} alert_mode=${BOT_ALERT_MODE})"
+    # Register/refresh the command menu and announce when the version changed.
+    notify_check_version_change
+
+    log_info "bot: started v${VERSION} (mode=${BOT_MODE} lang=${BOT_LANG} alert_mode=${BOT_ALERT_MODE})"
 }
 
 _bot_dispatch() {
@@ -198,6 +206,9 @@ _bot_daemon() {
             fi
         fi
 
+        # Self-gating: does work at most once per day, at/after 08:00.
+        notify_daily_update_check
+
         sleep 2
     done
 }
@@ -213,6 +224,8 @@ _bot_cron() {
             monitor_check "$cid"
         done
     fi
+
+    notify_daily_update_check
 }
 
 # ---- main ----
