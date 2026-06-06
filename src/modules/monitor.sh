@@ -21,7 +21,7 @@ monitor_init() {
 # Check for new devices and send Telegram alert
 monitor_check() {
     local chat_id="$1"
-    local mac lease ip hostname current_file
+    local mac lease ip hostname ssid current_file
     current_file="${KNOWN_DEVICES_FILE}.current"
 
     _monitor_current_macs > "$current_file"
@@ -33,10 +33,11 @@ monitor_check() {
             lease=$(grep " ${mac} " "$LEASES_FILE" | head -1)
             ip=$(echo "$lease" | awk '{print $3}')
             hostname=$(device_identity_hostname "$mac")
+            ssid=$(_monitor_wifi_ssid_for_mac "$mac")
 
             if _monitor_should_alert "$mac"; then
                 log_info "monitor: new device: $hostname ($mac / $ip)"
-                _monitor_send_alert "$chat_id" "$hostname" "$mac" "$ip"
+                _monitor_send_alert "$chat_id" "$hostname" "$mac" "$ip" "$ssid"
             fi
 
             _monitor_mark_seen "$mac"
@@ -61,11 +62,28 @@ _monitor_current_macs() {
 }
 
 _monitor_send_alert() {
-    local chat_id="$1" hostname="$2" mac="$3" ip="$4"
-    local ts
+    local chat_id="$1" hostname="$2" mac="$3" ip="$4" ssid="$5"
+    local ts net
     ts=$(date '+%Y-%m-%d %H:%M:%S')
-    telegram_send "$chat_id" "$(printf '🔔 <b>New device connected</b>\n\n<b>Name:</b> %s\n<b>IP:</b> <code>%s</code>\n<b>MAC:</b> <code>%s</code>\n<b>Time:</b> %s' \
-        "$hostname" "$ip" "$mac" "$ts")"
+    if [ -n "$ssid" ]; then
+        net="📶 ${ssid}"
+    else
+        net="🔌 Wired"
+    fi
+    telegram_send "$chat_id" "$(printf '🔔 <b>New device connected</b>\n\n<b>Name:</b> %s\n<b>Network:</b> %s\n<b>IP:</b> <code>%s</code>\n<b>MAC:</b> <code>%s</code>\n<b>Time:</b> %s' \
+        "$hostname" "$net" "$ip" "$mac" "$ts")"
+}
+
+_monitor_wifi_ssid_for_mac() {
+    local target_mac="$1" iface
+    for iface in $(iw dev 2>/dev/null | awk '$1=="Interface"{print $2}'); do
+        if iw dev "$iface" station dump 2>/dev/null | \
+                awk '$1=="Station"{print tolower($2)}' | grep -qx "$target_mac"; then
+            iw dev "$iface" info 2>/dev/null | \
+                awk '/[[:space:]]ssid /{sub(/^.*ssid /, ""); print; exit}'
+            return
+        fi
+    done
 }
 
 _SEEN_EVER_FILE="/etc/telegram-bot-seen-devices"

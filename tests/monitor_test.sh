@@ -19,6 +19,7 @@ mkdir -p "$TEST_TMP"
 MESSAGES=""
 CONFIG_WRITES=""
 CURRENT_MACS=""
+WIFI_SSID_FOR_MAC=""
 
 telegram_send() {
     local chat_id="$1"
@@ -41,6 +42,10 @@ config_set() {
 
 _monitor_current_macs() {
     printf '%s' "$CURRENT_MACS"
+}
+
+_monitor_wifi_ssid_for_mac() {
+    printf '%s' "$WIFI_SSID_FOR_MAC"
 }
 
 reset_messages() {
@@ -232,6 +237,38 @@ test_alerts_command_accepts_new_modes_and_on_maps_to_all() {
     assert_contains "$CONFIG_WRITES" "alert_mode=all" "/alerts on should persist all mode"
 }
 
+test_alert_includes_ssid_when_device_is_on_wifi() {
+    rm -f "$LEASES_FILE" "$KNOWN_DEVICES_FILE" "$_SEEN_EVER_FILE"
+    monitor_init
+
+    write_leases <<'EOF'
+1717420000 aa:bb:cc:dd:ee:ff 192.168.1.10 Phone *
+EOF
+    set_current_macs "aa:bb:cc:dd:ee:ff
+"
+    WIFI_SSID_FOR_MAC="HomeNetwork"
+    BOT_ALERT_MODE="all"
+    reset_messages
+    monitor_check "123"
+    assert_contains "$MESSAGES" "HomeNetwork" "alert should include the SSID name when device connects via Wi-Fi"
+}
+
+test_alert_shows_wired_when_no_ssid() {
+    rm -f "$LEASES_FILE" "$KNOWN_DEVICES_FILE" "$_SEEN_EVER_FILE"
+    monitor_init
+
+    write_leases <<'EOF'
+1717420000 aa:bb:cc:dd:ee:ff 192.168.1.10 Phone *
+EOF
+    set_current_macs "aa:bb:cc:dd:ee:ff
+"
+    WIFI_SSID_FOR_MAC=""
+    BOT_ALERT_MODE="all"
+    reset_messages
+    monitor_check "123"
+    assert_contains "$MESSAGES" "🔌 Wired" "alert should indicate wired connection when device has no SSID"
+}
+
 FAILURES=0
 
 run_test "unknown mode first sighting only" test_unknown_mode_alerts_only_first_seen
@@ -240,6 +277,8 @@ run_test "all mode alerts both first and reconnect" test_all_mode_alerts_unknown
 run_test "all mode handles reconnect without lease drop" test_all_mode_alerts_reconnect_even_if_lease_never_disappears
 run_test "off mode suppresses alerts" test_off_mode_stays_quiet
 run_test "alerts command supports mode values" test_alerts_command_accepts_new_modes_and_on_maps_to_all
+run_test "alert includes SSID name for Wi-Fi devices" test_alert_includes_ssid_when_device_is_on_wifi
+run_test "alert shows wired when device has no SSID" test_alert_shows_wired_when_no_ssid
 
 rm -rf "$TEST_TMP"
 

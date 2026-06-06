@@ -15,6 +15,7 @@ mkdir -p "$TEST_TMP"
 : > "$MESSAGES_FILE"
 
 WIFI_MACS=""
+WIFI_MAC_SSID=""
 IW_INTERFACES=""
 HOSTAPD_RESULT="OK"
 
@@ -36,6 +37,10 @@ device_identity_hostname() {
         11:22:33:44:55:66) printf 'Laptop\n' ;;
         *) printf 'Unknown\n' ;;
     esac
+}
+
+_devices_wifi_mac_ssid() {
+    printf '%s' "$WIFI_MAC_SSID"
 }
 
 _devices_wifi_macs() {
@@ -137,7 +142,7 @@ EOF
 test_list_empty_leases_shows_no_devices_message() {
     write_leases <<'EOF'
 EOF
-    WIFI_MACS=""
+    WIFI_MAC_SSID=""
     reset_output
     devices_list "123"
     messages=$(read_messages)
@@ -148,7 +153,7 @@ test_list_shows_network_devices_header() {
     write_leases <<'EOF'
 1717420000 aa:bb:cc:dd:ee:ff 192.168.1.10 Phone *
 EOF
-    WIFI_MACS="aa:bb:cc:dd:ee:ff
+    WIFI_MAC_SSID="aa:bb:cc:dd:ee:ff	HomeNetwork
 "
     reset_output
     devices_list "123"
@@ -156,16 +161,16 @@ EOF
     assert_contains "$messages" "Network Devices" "output header should say Network Devices"
 }
 
-test_list_wifi_device_shows_wifi_badge() {
+test_list_wifi_device_shows_ssid_name() {
     write_leases <<'EOF'
 1717420000 aa:bb:cc:dd:ee:ff 192.168.1.10 Phone *
 EOF
-    WIFI_MACS="aa:bb:cc:dd:ee:ff
+    WIFI_MAC_SSID="aa:bb:cc:dd:ee:ff	HomeNetwork
 "
     reset_output
     devices_list "123"
     messages=$(read_messages)
-    assert_contains "$messages" "📶 Wi-Fi" "device on Wi-Fi should show 📶 badge" || return 1
+    assert_contains "$messages" "📶 HomeNetwork" "WiFi device badge should show the SSID name" || return 1
     assert_not_contains "$messages" "🔌" "Wi-Fi device should not show wired/offline badge"
 }
 
@@ -173,7 +178,7 @@ test_list_offline_device_shows_wired_offline_badge() {
     write_leases <<'EOF'
 1717420000 aa:bb:cc:dd:ee:ff 192.168.1.10 Phone *
 EOF
-    WIFI_MACS=""
+    WIFI_MAC_SSID=""
     reset_output
     devices_list "123"
     messages=$(read_messages)
@@ -186,13 +191,27 @@ test_list_mixed_devices_show_correct_badges() {
 1717420000 aa:bb:cc:dd:ee:ff 192.168.1.10 Phone *
 1717420001 11:22:33:44:55:66 192.168.1.20 Laptop *
 EOF
-    WIFI_MACS="aa:bb:cc:dd:ee:ff
+    WIFI_MAC_SSID="aa:bb:cc:dd:ee:ff	HomeNetwork
 "
     reset_output
     devices_list "123"
     messages=$(read_messages)
-    assert_contains "$messages" "📶 Wi-Fi" "Wi-Fi device should have 📶 badge" || return 1
+    assert_contains "$messages" "📶 HomeNetwork" "Wi-Fi device should show SSID badge" || return 1
     assert_contains "$messages" "🔌 Wired / Offline" "offline device should have 🔌 badge"
+}
+
+test_list_wifi_devices_appear_before_offline() {
+    write_leases <<'EOF'
+1717420000 11:22:33:44:55:66 192.168.1.20 Laptop *
+1717420001 aa:bb:cc:dd:ee:ff 192.168.1.10 Phone *
+EOF
+    WIFI_MAC_SSID="aa:bb:cc:dd:ee:ff	HomeNetwork
+"
+    reset_output
+    devices_list "123"
+    messages=$(read_messages)
+    assert_contains "$messages" "1.</b> Phone" "WiFi device should be listed first regardless of lease order" || return 1
+    assert_contains "$messages" "2.</b> Laptop" "offline device should be listed second"
 }
 
 test_list_shows_ip_and_mac_for_each_device() {
@@ -288,12 +307,13 @@ run_test "resolve MAC: passes through lowercase unchanged"  test_resolve_mac_pas
 run_test "resolve MAC: resolves IP to MAC from leases"      test_resolve_mac_resolves_ip_from_leases
 run_test "resolve MAC: returns empty for unknown IP"        test_resolve_mac_returns_empty_for_unknown_ip
 
-run_test "list: empty leases shows no-devices message"      test_list_empty_leases_shows_no_devices_message
-run_test "list: header says Network Devices"                test_list_shows_network_devices_header
-run_test "list: Wi-Fi device shows 📶 badge"               test_list_wifi_device_shows_wifi_badge
-run_test "list: offline device shows 🔌 badge"             test_list_offline_device_shows_wired_offline_badge
-run_test "list: mixed devices show correct badges"          test_list_mixed_devices_show_correct_badges
-run_test "list: shows IP and MAC for each device"           test_list_shows_ip_and_mac_for_each_device
+run_test "list: empty leases shows no-devices message"                 test_list_empty_leases_shows_no_devices_message
+run_test "list: header says Network Devices"                           test_list_shows_network_devices_header
+run_test "list: Wi-Fi device shows SSID name in badge"                 test_list_wifi_device_shows_ssid_name
+run_test "list: offline device shows 🔌 badge"                        test_list_offline_device_shows_wired_offline_badge
+run_test "list: mixed devices show correct badges"                     test_list_mixed_devices_show_correct_badges
+run_test "list: WiFi devices appear before offline"                    test_list_wifi_devices_appear_before_offline
+run_test "list: shows IP and MAC for each device"                      test_list_shows_ip_and_mac_for_each_device
 
 run_test "kick: missing target shows usage"                 test_kick_no_target_shows_usage
 run_test "kick: unknown IP shows not-found error"           test_kick_unknown_ip_shows_not_found

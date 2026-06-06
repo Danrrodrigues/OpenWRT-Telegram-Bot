@@ -11,23 +11,32 @@ devices_list() {
     local chat_id="$1"
     local output="<b>Network Devices</b>\n\n"
     local count=0
-    local mac ip hostname badge
-    local wifi_macs
-    wifi_macs=$(_devices_wifi_macs)
+    local mac ip hostname ssid mac_lower
+    local wifi_mac_ssid
+    wifi_mac_ssid=$(_devices_wifi_mac_ssid)
 
+    # WiFi-connected devices first
     while IFS= read -r line; do
-        mac=$(echo "$line" | awk '{print $2}')
-        ip=$(echo "$line" | awk '{print $3}')
+        mac=$(printf '%s\n' "$line" | awk '{print $2}')
+        ip=$(printf '%s\n' "$line" | awk '{print $3}')
+        mac_lower=$(printf '%s' "$mac" | tr 'A-Z' 'a-z')
+        ssid=$(printf '%s\n' "$wifi_mac_ssid" | awk -v m="$mac_lower" 'BEGIN{FS="\t"} $1==m{print $2; exit}')
+        [ -n "$ssid" ] || continue
         hostname=$(device_identity_hostname "$mac")
-
-        if echo "$wifi_macs" | grep -qx "$(echo "$mac" | tr 'A-Z' 'a-z')"; then
-            badge="📶 Wi-Fi"
-        else
-            badge="🔌 Wired / Offline"
-        fi
-
         count=$((count + 1))
-        output="${output}<b>${count}.</b> ${hostname}  <i>${badge}</i>\n   IP: <code>${ip}</code>\n   MAC: <code>${mac}</code>\n\n"
+        output="${output}<b>${count}.</b> ${hostname}  <i>📶 ${ssid}</i>\n   IP: <code>${ip}</code>\n   MAC: <code>${mac}</code>\n\n"
+    done < "$LEASES_FILE"
+
+    # Wired / Offline devices second
+    while IFS= read -r line; do
+        mac=$(printf '%s\n' "$line" | awk '{print $2}')
+        ip=$(printf '%s\n' "$line" | awk '{print $3}')
+        mac_lower=$(printf '%s' "$mac" | tr 'A-Z' 'a-z')
+        ssid=$(printf '%s\n' "$wifi_mac_ssid" | awk -v m="$mac_lower" 'BEGIN{FS="\t"} $1==m{print $2; exit}')
+        [ -z "$ssid" ] || continue
+        hostname=$(device_identity_hostname "$mac")
+        count=$((count + 1))
+        output="${output}<b>${count}.</b> ${hostname}  <i>🔌 Wired / Offline</i>\n   IP: <code>${ip}</code>\n   MAC: <code>${mac}</code>\n\n"
     done < "$LEASES_FILE"
 
     if [ "$count" -eq 0 ]; then
@@ -199,11 +208,19 @@ devices_status() {
 
 # ---- helpers ----
 
+_devices_wifi_mac_ssid() {
+    # Output: "<mac>\t<ssid>" one per line for every WiFi-connected device
+    local iface ssid
+    for iface in $(iw dev 2>/dev/null | awk '$1=="Interface"{print $2}'); do
+        ssid=$(iw dev "$iface" info 2>/dev/null | awk '/[[:space:]]ssid /{sub(/^.*ssid /, ""); print; exit}')
+        [ -n "$ssid" ] || ssid="Wi-Fi"
+        iw dev "$iface" station dump 2>/dev/null | \
+            awk -v s="$ssid" '$1=="Station"{print tolower($2) "\t" s}'
+    done | awk 'NF && !seen[$1]++'
+}
+
 _devices_wifi_macs() {
-    local iface
-    iw dev 2>/dev/null | awk '$1=="Interface"{print $2}' | while IFS= read -r iface; do
-        iw dev "$iface" station dump 2>/dev/null | awk '$1=="Station"{print tolower($2)}'
-    done | awk 'NF && !seen[$0]++'
+    _devices_wifi_mac_ssid | awk 'BEGIN{FS="\t"}{print $1}'
 }
 
 _devices_resolve_mac() {
