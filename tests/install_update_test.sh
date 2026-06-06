@@ -100,7 +100,7 @@ test_inline_copies_then_restarts() {
     cat > "$service" <<EOF
 #!/bin/sh
 echo "\$1" >> "$log"
-if [ "\$1" = "restart" ] && grep -q '0.3.1' "$install_dir/bot.sh" 2>/dev/null; then
+if [ "\$1" = "restart" ] && grep -q '0.3.2' "$install_dir/bot.sh" 2>/dev/null; then
     echo "copied-before-restart" >> "$log"
 fi
 EOF
@@ -114,7 +114,7 @@ EOF
 
     assert_file_exists "$install_dir/core/config.sh" "core files should be copied" || return 1
     assert_file_exists "$install_dir/lang/pt.sh" "lang files should be copied" || return 1
-    assert_contains "$(cat "$install_dir/bot.sh")" '0.3.1' "bot.sh should be the new version" || return 1
+    assert_contains "$(cat "$install_dir/bot.sh")" '0.3.2' "bot.sh should be the new version" || return 1
     assert_contains "$(cat "$log")" "restart" "service should be restarted" || return 1
     assert_contains "$(cat "$log")" "copied-before-restart" "copy must happen before restart" || return 1
 }
