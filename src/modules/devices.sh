@@ -23,6 +23,7 @@ devices_list() {
         ssid=$(printf '%s\n' "$wifi_mac_ssid" | awk -v m="$mac_lower" 'BEGIN{FS="\t"} $1==m{print $2; exit}')
         [ -n "$ssid" ] || continue
         hostname=$(device_identity_hostname "$mac")
+        ssid=$(device_identity_escape_html "$ssid")
         count=$((count + 1))
         output="${output}<b>${count}.</b> ${hostname}  <i>📶 ${ssid}</i>\n   IP: <code>${ip}</code>\n   MAC: <code>${mac}</code>\n\n"
     done < "$LEASES_FILE"

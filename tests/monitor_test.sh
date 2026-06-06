@@ -253,6 +253,23 @@ EOF
     assert_contains "$MESSAGES" "HomeNetwork" "alert should include the SSID name when device connects via Wi-Fi"
 }
 
+test_alert_escapes_ssid_html_metacharacters() {
+    rm -f "$LEASES_FILE" "$KNOWN_DEVICES_FILE" "$_SEEN_EVER_FILE"
+    monitor_init
+
+    write_leases <<'EOF'
+1717420000 aa:bb:cc:dd:ee:ff 192.168.1.10 Phone *
+EOF
+    set_current_macs "aa:bb:cc:dd:ee:ff
+"
+    WIFI_SSID_FOR_MAC="AT&T <guest>"
+    BOT_ALERT_MODE="all"
+    reset_messages
+    monitor_check "123"
+    assert_contains "$MESSAGES" "AT&amp;T &lt;guest&gt;" "alert should escape SSID HTML metacharacters" || return 1
+    assert_not_contains "$MESSAGES" "AT&T <guest>" "raw unescaped SSID should not appear in alert"
+}
+
 test_alert_shows_wired_when_no_ssid() {
     rm -f "$LEASES_FILE" "$KNOWN_DEVICES_FILE" "$_SEEN_EVER_FILE"
     monitor_init
@@ -279,6 +296,7 @@ run_test "off mode suppresses alerts" test_off_mode_stays_quiet
 run_test "alerts command supports mode values" test_alerts_command_accepts_new_modes_and_on_maps_to_all
 run_test "alert includes SSID name for Wi-Fi devices" test_alert_includes_ssid_when_device_is_on_wifi
 run_test "alert shows wired when device has no SSID" test_alert_shows_wired_when_no_ssid
+run_test "alert escapes SSID HTML metacharacters" test_alert_escapes_ssid_html_metacharacters
 
 rm -rf "$TEST_TMP"
 

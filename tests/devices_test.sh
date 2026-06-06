@@ -200,6 +200,19 @@ EOF
     assert_contains "$messages" "🔌 Wired / Offline" "offline device should have 🔌 badge"
 }
 
+test_list_wifi_device_escapes_ssid_html() {
+    write_leases <<'EOF'
+1717420000 aa:bb:cc:dd:ee:ff 192.168.1.10 Phone *
+EOF
+    WIFI_MAC_SSID="aa:bb:cc:dd:ee:ff	AT&T <guest>
+"
+    reset_output
+    devices_list "123"
+    messages=$(read_messages)
+    assert_contains "$messages" "AT&amp;T &lt;guest&gt;" "SSID with HTML metacharacters should be escaped in listing" || return 1
+    assert_not_contains "$messages" "AT&T <guest>" "raw unescaped SSID should not appear in listing"
+}
+
 test_list_wifi_devices_appear_before_offline() {
     write_leases <<'EOF'
 1717420000 11:22:33:44:55:66 192.168.1.20 Laptop *
@@ -312,6 +325,7 @@ run_test "list: header says Network Devices"                           test_list
 run_test "list: Wi-Fi device shows SSID name in badge"                 test_list_wifi_device_shows_ssid_name
 run_test "list: offline device shows 🔌 badge"                        test_list_offline_device_shows_wired_offline_badge
 run_test "list: mixed devices show correct badges"                     test_list_mixed_devices_show_correct_badges
+run_test "list: SSID HTML metacharacters are escaped"                  test_list_wifi_device_escapes_ssid_html
 run_test "list: WiFi devices appear before offline"                    test_list_wifi_devices_appear_before_offline
 run_test "list: shows IP and MAC for each device"                      test_list_shows_ip_and_mac_for_each_device
 

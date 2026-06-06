@@ -66,7 +66,7 @@ _monitor_send_alert() {
     local ts net
     ts=$(date '+%Y-%m-%d %H:%M:%S')
     if [ -n "$ssid" ]; then
-        net="📶 ${ssid}"
+        net="📶 $(device_identity_escape_html "$ssid")"
     else
         net="🔌 Wired"
     fi
