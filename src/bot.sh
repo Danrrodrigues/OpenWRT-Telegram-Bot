@@ -1,7 +1,7 @@
 #!/bin/sh
 # OpenWRT Telegram Bot — main entry point
 
-VERSION="0.3.2"
+VERSION="0.3.3"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
