@@ -33,6 +33,13 @@ Current: <code>%s</code>
 Send /rollback confirm to restore."
 T_ROLLBACK_RUNNING="Restoring version <code>%s</code>... the bot will restart shortly."
 
+# --- lang command ---
+T_LANG_CURRENT="Current language: %s
+Send /lang en or /lang pt to switch."
+T_LANG_CHANGED="Language changed to %s"
+T_LANG_SAME="Language is already set to %s"
+T_LANG_INVALID="Unknown language: %s. Available: en, pt"
+
 I18N_COMMANDS='start|Show help and available commands
 devices|List connected devices
 status|Router status (CPU, RAM, uptime)
@@ -45,4 +52,5 @@ limit|Set speed limit (MAC down up in Mbps)
 unlimit|Remove speed limit (MAC)
 update|Check for updates (use confirm to apply)
 rollback|Restore previous version (use confirm to apply)
+lang|Change bot language (en or pt)
 help|Show this message'

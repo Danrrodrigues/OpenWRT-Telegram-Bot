@@ -33,6 +33,13 @@ Atual:  <code>%s</code>
 Envie /rollback confirm para restaurar."
 T_ROLLBACK_RUNNING="Restaurando versão <code>%s</code>... o bot reiniciará em instantes."
 
+# --- lang command ---
+T_LANG_CURRENT="Idioma atual: %s
+Envie /lang en ou /lang pt para alterar."
+T_LANG_CHANGED="Idioma alterado para %s"
+T_LANG_SAME="O idioma já está definido como %s"
+T_LANG_INVALID="Idioma desconhecido: %s. Disponíveis: en, pt"
+
 I18N_COMMANDS='start|Mostrar ajuda e comandos disponíveis
 devices|Listar dispositivos conectados
 status|Status do roteador (CPU, RAM, uptime)
@@ -45,4 +52,5 @@ limit|Definir limite de velocidade (MAC down up em Mbps)
 unlimit|Remover limite de velocidade (MAC)
 update|Verificar atualizações (use confirm para aplicar)
 rollback|Restaurar versão anterior (use confirm para aplicar)
+lang|Alterar idioma do bot (en ou pt)
 help|Mostrar esta mensagem'
