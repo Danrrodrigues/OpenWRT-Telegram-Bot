@@ -20,6 +20,29 @@ telegram_send() {
 "
 }
 
+# i18n strings for updater messages
+T_CHECKING="Checking for updates..."
+T_CHECK_FAIL="Could not check for updates. Is the router connected to the internet?"
+T_UP_TO_DATE="Already on the latest version (<code>%s</code>)."
+T_UPDATE_AVAILABLE_CMD="<b>Update available!</b>
+
+Current:    <code>%s</code>
+Available: <code>%s</code>
+
+Send /update confirm to update."
+T_UPDATING="Updating... the bot will restart shortly.
+Send /status to confirm when back."
+T_UPDATE_FAIL_EXTRACT="Update failed: installation archive not found."
+T_UPDATE_FAIL_DOWNLOAD="Update failed: could not download the package. Check the internet connection."
+T_ROLLBACK_NONE="No backup available. Run /update first to create a restore point."
+T_ROLLBACK_AVAILABLE="<b>Rollback available</b>
+
+Backup: <code>%s</code>
+Current: <code>%s</code>
+
+Send /rollback confirm to restore."
+T_ROLLBACK_RUNNING="Restoring version <code>%s</code>... the bot will restart shortly."
+
 log_info()  { :; }
 log_error() { :; }
 log_warn()  { :; }
@@ -116,7 +139,7 @@ run_test() {
 test_already_up_to_date() {
     _REMOTE_VERSION_MOCK="0.2.2"
     updater_check "12345" ""
-    assert_contains "$MESSAGES" "mais recente" "should report already on latest" || return 1
+    assert_contains "$MESSAGES" "latest version" "should report already on latest" || return 1
     assert_contains "$MESSAGES" "0.2.2" "should include current version" || return 1
 }
 
@@ -137,7 +160,7 @@ test_network_failure() {
 
 test_update_confirm_sends_in_progress_message() {
     updater_check "12345" "confirm"
-    assert_contains "$MESSAGES" "Atualizando" "should send update in progress message" || return 1
+    assert_contains "$MESSAGES" "Updating" "should send update in progress message" || return 1
 }
 
 # ---- /rollback tests ----
@@ -160,14 +183,14 @@ test_rollback_shows_versions() {
 test_rollback_confirm_sends_restore_message() {
     echo "0.2.1" > "$UPDATER_BACKUP_VERSION_FILE"
     updater_rollback "12345" "confirm"
-    assert_contains "$MESSAGES" "Restaurando" "should send restoring message" || return 1
+    assert_contains "$MESSAGES" "Restoring" "should send restoring message" || return 1
     assert_contains "$MESSAGES" "0.2.1" "should include backup version in message" || return 1
 }
 
 test_rollback_no_confirm_skips_restore() {
     echo "0.2.1" > "$UPDATER_BACKUP_VERSION_FILE"
     updater_rollback "12345" ""
-    assert_not_contains "$MESSAGES" "Restaurando" "dry run should not send restore message" || return 1
+    assert_not_contains "$MESSAGES" "Restoring" "dry run should not send restore message" || return 1
 }
 
 # ---- backup tests ----

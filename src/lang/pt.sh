@@ -10,6 +10,29 @@ T_UPDATE_AVAILABLE="📦 Versão nova disponível: v%s (você tem v%s).
 Envie /update confirm para atualizar."
 
 # --- command menu (command|description per line) ---
+# --- updater messages ---
+T_CHECKING="Verificando atualizações..."
+T_CHECK_FAIL="Não foi possível verificar atualizações. O roteador está conectado à internet?"
+T_UP_TO_DATE="Já está na versão mais recente (<code>%s</code>)."
+T_UPDATE_AVAILABLE_CMD="<b>Atualização disponível!</b>
+
+Atual:       <code>%s</code>
+Disponível:  <code>%s</code>
+
+Envie /update confirm para atualizar."
+T_UPDATING="Atualizando... o bot reiniciará em instantes.
+Envie /status para confirmar quando voltar."
+T_UPDATE_FAIL_EXTRACT="Falha na atualização: arquivo de instalação não encontrado."
+T_UPDATE_FAIL_DOWNLOAD="Falha na atualização: não foi possível baixar o pacote. Verifique a conexão."
+T_ROLLBACK_NONE="Nenhum backup disponível. Faça /update primeiro para criar um ponto de restauração."
+T_ROLLBACK_AVAILABLE="<b>Rollback disponível</b>
+
+Backup: <code>%s</code>
+Atual:  <code>%s</code>
+
+Envie /rollback confirm para restaurar."
+T_ROLLBACK_RUNNING="Restaurando versão <code>%s</code>... o bot reiniciará em instantes."
+
 I18N_COMMANDS='start|Mostrar ajuda e comandos disponíveis
 devices|Listar dispositivos conectados
 status|Status do roteador (CPU, RAM, uptime)
