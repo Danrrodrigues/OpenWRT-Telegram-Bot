@@ -138,6 +138,7 @@ _copy_files() {
     cp "${SCRIPT_DIR}/src/modules/bandwidth.sh"  "${INSTALL_DIR}/modules/bandwidth.sh"
     cp "${SCRIPT_DIR}/src/modules/updater.sh"    "${INSTALL_DIR}/modules/updater.sh"
     cp "${SCRIPT_DIR}/src/modules/notify.sh"     "${INSTALL_DIR}/modules/notify.sh"
+    cp "${SCRIPT_DIR}/src/modules/lang.sh"       "${INSTALL_DIR}/modules/lang.sh"
     cp "${SCRIPT_DIR}/src/lang/en.sh"            "${INSTALL_DIR}/lang/en.sh"
     cp "${SCRIPT_DIR}/src/lang/pt.sh"            "${INSTALL_DIR}/lang/pt.sh"
 
@@ -259,6 +260,14 @@ _update() {
     echo "  Current version: ${old_version}"
     echo "  New version:     ${new_version:-unknown}"
     echo ""
+
+    # Sanity-check the new code before touching the installed version.
+    # A sourced file that is missing causes sh to abort immediately, which leaves
+    # the device unresponsive with no way to recover remotely.
+    _info "Pre-flight: verifying new bot.sh loads all modules..."
+    if ! sh "${SCRIPT_DIR}/src/bot.sh" --help >/dev/null 2>&1; then
+        _die "Pre-flight failed: new bot.sh cannot load its modules. Update aborted — current version still running."
+    fi
 
     # Copy the new files FIRST, while the service is still running. The running
     # bot already has its code loaded in memory, so swapping files on disk is
