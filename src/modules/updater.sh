@@ -50,30 +50,30 @@ updater_check() {
         return
     fi
 
-    telegram_send "$chat_id" "Verificando atualizações..."
+    telegram_send "$chat_id" "$T_CHECKING"
 
     local remote_version
     remote_version=$(_updater_remote_version)
 
     if [ -z "$remote_version" ]; then
-        telegram_send "$chat_id" "Não foi possível verificar atualizações. O roteador está conectado à internet?"
+        telegram_send "$chat_id" "$T_CHECK_FAIL"
         return 1
     fi
 
     if [ "$VERSION" = "$remote_version" ]; then
-        telegram_send "$chat_id" "Já está na versão mais recente (<code>${VERSION}</code>)."
+        # shellcheck disable=SC2059
+        telegram_send "$chat_id" "$(printf "$T_UP_TO_DATE" "$VERSION")"
         return 0
     fi
 
-    telegram_send "$chat_id" "$(printf '<b>Atualização disponível!</b>\n\nAtual:       <code>%s</code>\nDisponível:  <code>%s</code>\n\nEnvie /update confirm para atualizar.' \
-        "$VERSION" "$remote_version")"
+    # shellcheck disable=SC2059
+    telegram_send "$chat_id" "$(printf "$T_UPDATE_AVAILABLE_CMD" "$VERSION" "$remote_version")"
 }
 
 updater_run() {
     local chat_id="$1"
 
-    telegram_send "$chat_id" "Atualizando... o bot reiniciará em instantes.
-Envie /status para confirmar quando voltar."
+    telegram_send "$chat_id" "$T_UPDATING"
     log_info "updater: starting update from $VERSION"
 
     (
@@ -89,13 +89,13 @@ Envie /status para confirmar quando voltar."
             else
                 # shellcheck disable=SC2086
                 for cid in $BOT_CHAT_IDS; do
-                    telegram_send "$cid" "Falha na atualização: arquivo de instalação não encontrado."
+                    telegram_send "$cid" "$T_UPDATE_FAIL_EXTRACT"
                 done
             fi
         else
             # shellcheck disable=SC2086
             for cid in $BOT_CHAT_IDS; do
-                telegram_send "$cid" "Falha na atualização: não foi possível baixar o pacote. Verifique a conexão."
+                    telegram_send "$cid" "$T_UPDATE_FAIL_DOWNLOAD"
             done
         fi
         rm -rf "$UPDATER_TMP_DIR"
@@ -111,7 +111,7 @@ updater_rollback() {
     backup_version=$(cat "$UPDATER_BACKUP_VERSION_FILE" 2>/dev/null)
 
     if [ -z "$backup_version" ]; then
-        telegram_send "$chat_id" "Nenhum backup disponível. Faça /update primeiro para criar um ponto de restauração."
+        telegram_send "$chat_id" "$T_ROLLBACK_NONE"
         return 0
     fi
 
@@ -120,15 +120,16 @@ updater_rollback() {
         return
     fi
 
-    telegram_send "$chat_id" "$(printf '<b>Rollback disponível</b>\n\nBackup: <code>%s</code>\nAtual:  <code>%s</code>\n\nEnvie /rollback confirm para restaurar.' \
-        "$backup_version" "$VERSION")"
+    # shellcheck disable=SC2059
+    telegram_send "$chat_id" "$(printf "$T_ROLLBACK_AVAILABLE" "$backup_version" "$VERSION")"
 }
 
 _updater_do_rollback() {
     local chat_id="$1"
     local backup_version="$2"
 
-    telegram_send "$chat_id" "Restaurando versão <code>${backup_version}</code>... o bot reiniciará em instantes."
+    # shellcheck disable=SC2059
+    telegram_send "$chat_id" "$(printf "$T_ROLLBACK_RUNNING" "$backup_version")"
     log_info "updater: rolling back from $VERSION to $backup_version"
 
     (

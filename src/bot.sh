@@ -1,7 +1,7 @@
 #!/bin/sh
 # OpenWRT Telegram Bot — main entry point
 
-VERSION="0.3.2"
+VERSION="0.3.3"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -25,6 +25,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "${SCRIPT_DIR}/modules/updater.sh"
 # shellcheck source=modules/notify.sh
 . "${SCRIPT_DIR}/modules/notify.sh"
+# shellcheck source=modules/lang.sh
+. "${SCRIPT_DIR}/modules/lang.sh"
 
 OFFSET_FILE="/tmp/telegram-bot-offset"
 
@@ -118,6 +120,9 @@ _bot_dispatch() {
         /rollback)
             updater_rollback "$chat_id" "$args"
             ;;
+        /lang)
+            lang_set "$chat_id" "$args"
+            ;;
         *)
             telegram_send "$chat_id" "Unknown command: <code>${cmd}</code>
 Type /help for available commands."
@@ -148,6 +153,7 @@ _bot_send_help() {
 /update — Check for updates (add <i>confirm</i> to apply)
 /rollback — Restore previous version (add <i>confirm</i> to apply)
 
+/lang en|pt — Change bot language
 /help — Show this message"
 }
 
