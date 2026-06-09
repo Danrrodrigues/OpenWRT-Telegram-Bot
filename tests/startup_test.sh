@@ -37,6 +37,9 @@ test_bot_help_loads_cleanly() {
 test_all_sourced_files_exist() {
     failed=0
     # Extract relative paths from lines like: . "${SCRIPT_DIR}/some/file.sh"
+    # SC2016: single quotes are intentional — we want the literal string ${SCRIPT_DIR}
+    # shellcheck disable=SC2016
+    sourced_rels=$(grep '^\. "\${SCRIPT_DIR}/' "$SRC_DIR/bot.sh" | sed 's|.*\${SCRIPT_DIR}/||; s|".*||')
     while IFS= read -r rel; do
         [ -z "$rel" ] && continue
         if [ ! -f "$SRC_DIR/$rel" ]; then
@@ -44,7 +47,7 @@ test_all_sourced_files_exist() {
             failed=1
         fi
     done << EOF
-$(grep '^\. "\${SCRIPT_DIR}/' "$SRC_DIR/bot.sh" | sed 's|.*\${SCRIPT_DIR}/||; s|".*||')
+$sourced_rels
 EOF
     return $failed
 }
