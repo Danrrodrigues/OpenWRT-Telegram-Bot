@@ -33,6 +33,11 @@ Current: <code>%s</code>
 Send /rollback confirm to restore."
 T_ROLLBACK_RUNNING="Restoring version <code>%s</code>... the bot will restart shortly."
 
+# --- fix command ---
+T_FIX_OK="🛠️ Firewall repaired. Blocklist rules reloaded and active blocks/limits restored."
+T_FIX_REVERTED="⚠️ Repair aborted: the new firewall rules would not load, so nothing was changed and your internet is safe. Check the logs."
+T_FIX_NONFT="Nothing to repair: this router has no <code>nft</code> available."
+
 # --- lang command ---
 T_LANG_CURRENT="Current language: %s
 Send /lang en or /lang pt to switch."
@@ -52,5 +57,6 @@ limit|Set speed limit (MAC down up in Mbps)
 unlimit|Remove speed limit (MAC)
 update|Check for updates (use confirm to apply)
 rollback|Restore previous version (use confirm to apply)
+fix|Repair firewall and blocklist setup
 lang|Change bot language (en or pt)
 help|Show this message'

@@ -135,6 +135,7 @@ _copy_files() {
     cp "${SCRIPT_DIR}/src/core/telegram.sh"      "${INSTALL_DIR}/core/telegram.sh"
     cp "${SCRIPT_DIR}/src/modules/monitor.sh"    "${INSTALL_DIR}/modules/monitor.sh"
     cp "${SCRIPT_DIR}/src/modules/devices.sh"    "${INSTALL_DIR}/modules/devices.sh"
+    cp "${SCRIPT_DIR}/src/modules/firewall.sh"   "${INSTALL_DIR}/modules/firewall.sh"
     cp "${SCRIPT_DIR}/src/modules/bandwidth.sh"  "${INSTALL_DIR}/modules/bandwidth.sh"
     cp "${SCRIPT_DIR}/src/modules/updater.sh"    "${INSTALL_DIR}/modules/updater.sh"
     cp "${SCRIPT_DIR}/src/modules/notify.sh"     "${INSTALL_DIR}/modules/notify.sh"
@@ -194,49 +195,16 @@ _install_cron() {
 # ---- nftables blocklist setup ----
 
 _setup_nftables() {
-    if command -v nft >/dev/null 2>&1; then
-        _info "Setting up nftables MAC blocklist..."
-        # Add persistent nft rules via fw4 includes
-        mkdir -p /etc/nftables.d
-        cat > /etc/nftables.d/telegram-bot.nft <<'NFTEOF'
-# OpenWRT Telegram Bot — MAC blocklist
-# Managed automatically by bot.sh — do not edit manually.
-#
-# IMPORTANT: files in /etc/nftables.d/ are included by fw4 *inside* the
-# `table inet fw4 { ... }` block. Do NOT declare `table inet fw4` here, or
-# fw4 fails to render the whole ruleset and the entire firewall (including
-# NAT/masquerade) stops loading — leaving LAN clients with no internet.
-# So we declare only the set and a chain, with no table wrapper.
-
-set telegram_blocked {
-    type ether_addr
-    elements = { }
-}
-
-# Dedicated forward base-chain that runs *before* fw4's filtering
-# (priority -1 < fw4's filter priority 0). Default policy accept so it only
-# drops blocked MACs and lets every other packet fall through to fw4.
-chain telegram_block {
-    type filter hook forward priority -1; policy accept;
-    ether saddr @telegram_blocked drop
-    ether daddr @telegram_blocked drop
-}
-NFTEOF
-        # SAFETY GUARD — never leave a broken firewall behind.
-        # A bad include here takes down the WHOLE fw4 ruleset (NAT included),
-        # which kills internet for every LAN client. So we VALIDATE that fw4
-        # still renders a loadable ruleset *before* applying. If it does not,
-        # we pull our own file back out and reload, keeping the firewall up.
-        if { fw4 check || fw4 print | nft -c -f -; } >/dev/null 2>&1; then
-            fw4 reload >/dev/null 2>&1
-            _info "nftables blocklist configured"
-        else
-            rm -f /etc/nftables.d/telegram-bot.nft
-            fw4 reload >/dev/null 2>&1 || true
-            _warn "nftables blocklist NOT applied: it would break the firewall ruleset."
-            _warn "File removed and firewall reloaded — your internet is preserved."
-        fi
-    fi
+    command -v nft >/dev/null 2>&1 || return 0
+    _info "Setting up nftables MAC blocklist..."
+    # Delegate to the shared module — single source of truth for the nft include.
+    . "${SCRIPT_DIR}/src/modules/firewall.sh"
+    result=$(firewall_ensure_blocklist)
+    case "$result" in
+        ok)       _info "nftables blocklist configured" ;;
+        reverted) _warn "nftables blocklist NOT applied: would break firewall. Internet preserved." ;;
+        *)        _info "nft not available, skipping blocklist" ;;
+    esac
 }
 
 # ---- update ----
