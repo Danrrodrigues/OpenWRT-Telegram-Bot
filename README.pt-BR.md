@@ -105,6 +105,7 @@ Veja o guia completo em [docs/installation.md](docs/installation.md).
 | `/alerts off\|known\|unknown\|all` | Define o modo de alerta de dispositivos |
 | `/update` | Verifica atualizações (`/update confirm` para aplicar) |
 | `/rollback` | Restaura versão anterior (`/rollback confirm` para aplicar) |
+| `/fix` | Repara o firewall e os bloqueios (usar após `fw4 reload` manual) |
 | `/help` | Mostra todos os comandos |
 
 Exemplo:

@@ -116,6 +116,18 @@ If the update breaks something, restore the previous version:
 
 The backup is created automatically before every `/update confirm`. Only the most recent backup is kept. Router config (`/etc/config/telegram-bot`) is never touched by either command.
 
+### /fix
+
+Rewrites the firewall nftables include, validates it, and reloads fw4. Also re-applies any blocked MACs and speed limits that a `fw4 reload` would have wiped from the live ruleset.
+
+Use this after a manual `fw4 reload` or `firewall restart`, or if `/block` stops dropping traffic.
+
+```sh
+/fix
+```
+
+The command is a no-op if the router has no `nft` binary. If the new include would break the firewall, it is discarded and the firewall is reloaded without it — your internet stays up.
+
 ## New Device Alert / Alerta de Novo Dispositivo
 
 When a new device joins the network:
