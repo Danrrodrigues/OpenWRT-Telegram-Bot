@@ -9,6 +9,22 @@ Controle e monitore sua rede doméstica diretamente pelo Telegram. Roda como um 
 
 ---
 
+> ## ⚠️ Beta — use por sua conta e risco
+>
+> Este projeto está em **beta** e em desenvolvimento ativo. Ele escreve nas
+> configurações de **firewall** (`nftables`/`fw4`), Wi-Fi e sistema do seu
+> roteador. Uma alteração ruim pode derrubar sua rede — incluindo a internet de
+> todos os dispositivos conectados.
+>
+> **Use por sua conta e risco.** É altamente recomendável que você tenha bom
+> **domínio técnico** do OpenWRT: saber acessar o roteador por **SSH**, ler e
+> recarregar o **firewall** (`fw4`/`nft`) e recuperar o aparelho manualmente
+> (ex.: modo failsafe) caso algo dê errado. Garanta sempre uma forma de voltar a
+> acessar o roteador antes de instalar. Sem nenhuma garantia — veja o
+> [LICENSE](LICENSE).
+
+---
+
 ## Funcionalidades
 
 - [x] 🔔 Alerta quando um novo dispositivo entra na rede
