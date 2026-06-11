@@ -103,6 +103,7 @@ See [docs/installation.md](docs/installation.md) for the full guide.
 | `/alerts off\|known\|unknown\|all` | Set device alert mode |
 | `/update` | Check for updates (`/update confirm` to apply) |
 | `/rollback` | Restore previous version (`/rollback confirm` to apply) |
+| `/fix` | Repair firewall blocklist (use after a manual `fw4 reload`) |
 | `/help` | Show all commands |
 
 Example:

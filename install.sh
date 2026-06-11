@@ -199,7 +199,7 @@ _setup_nftables() {
     _info "Setting up nftables MAC blocklist..."
     # Delegate to the shared module — single source of truth for the nft include.
     . "${SCRIPT_DIR}/src/modules/firewall.sh"
-    result=$(firewall_ensure_blocklist)
+    result=$(firewall_ensure_blocklist) || true
     case "$result" in
         ok)       _info "nftables blocklist configured" ;;
         reverted) _warn "nftables blocklist NOT applied: would break firewall. Internet preserved." ;;
