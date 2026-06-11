@@ -200,22 +200,42 @@ _setup_nftables() {
         mkdir -p /etc/nftables.d
         cat > /etc/nftables.d/telegram-bot.nft <<'NFTEOF'
 # OpenWRT Telegram Bot — MAC blocklist
-# Managed automatically by bot.sh — do not edit manually
+# Managed automatically by bot.sh — do not edit manually.
+#
+# IMPORTANT: files in /etc/nftables.d/ are included by fw4 *inside* the
+# `table inet fw4 { ... }` block. Do NOT declare `table inet fw4` here, or
+# fw4 fails to render the whole ruleset and the entire firewall (including
+# NAT/masquerade) stops loading — leaving LAN clients with no internet.
+# So we declare only the set and a chain, with no table wrapper.
 
-table inet fw4 {
-    set telegram_blocked {
-        type ether_addr
-        elements = { }
-    }
+set telegram_blocked {
+    type ether_addr
+    elements = { }
+}
 
-    chain forward {
-        ether saddr @telegram_blocked drop
-        ether daddr @telegram_blocked drop
-    }
+# Dedicated forward base-chain that runs *before* fw4's filtering
+# (priority -1 < fw4's filter priority 0). Default policy accept so it only
+# drops blocked MACs and lets every other packet fall through to fw4.
+chain telegram_block {
+    type filter hook forward priority -1; policy accept;
+    ether saddr @telegram_blocked drop
+    ether daddr @telegram_blocked drop
 }
 NFTEOF
-        fw4 reload 2>/dev/null || nft -f /etc/nftables.d/telegram-bot.nft 2>/dev/null || true
-        _info "nftables blocklist configured"
+        # SAFETY GUARD — never leave a broken firewall behind.
+        # A bad include here takes down the WHOLE fw4 ruleset (NAT included),
+        # which kills internet for every LAN client. So we VALIDATE that fw4
+        # still renders a loadable ruleset *before* applying. If it does not,
+        # we pull our own file back out and reload, keeping the firewall up.
+        if { fw4 check || fw4 print | nft -c -f -; } >/dev/null 2>&1; then
+            fw4 reload >/dev/null 2>&1
+            _info "nftables blocklist configured"
+        else
+            rm -f /etc/nftables.d/telegram-bot.nft
+            fw4 reload >/dev/null 2>&1 || true
+            _warn "nftables blocklist NOT applied: it would break the firewall ruleset."
+            _warn "File removed and firewall reloaded — your internet is preserved."
+        fi
     fi
 }
 

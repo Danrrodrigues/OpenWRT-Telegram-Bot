@@ -9,6 +9,20 @@ Control and monitor your home network directly from Telegram. Runs as a lightwei
 
 ---
 
+> ## ⚠️ Beta — use at your own risk
+>
+> This project is in **beta** and under active development. It writes to your
+> router's firewall (`nftables`/`fw4`), Wi-Fi and system config. A bad change can
+> take your network — including internet for every connected device — offline.
+>
+> **Use it at your own risk.** It's strongly recommended that you have solid
+> technical command of OpenWRT: how to access the router over **SSH**, read and
+> reload the **firewall** (`fw4`/`nft`), and recover the device manually (e.g.
+> failsafe mode) if something goes wrong. Always have a way back in before you
+> install. No warranty of any kind — see [LICENSE](LICENSE).
+
+---
+
 ## Features
 
 - [x] 🔔 Alert when a new device joins the network
