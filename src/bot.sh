@@ -1,7 +1,7 @@
 #!/bin/sh
 # OpenWRT Telegram Bot — main entry point
 
-VERSION="0.3.6"
+VERSION="0.3.7"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -92,6 +92,9 @@ _bot_dispatch() {
         /kick)
             devices_kick "$chat_id" "$args"
             ;;
+        /wake)
+            devices_wake "$chat_id" "$args"
+            ;;
         /block)
             devices_block "$chat_id" "$args"
             ;;
@@ -146,6 +149,7 @@ _bot_send_help() {
 
 <b>Device control:</b>
 /kick &lt;MAC or IP&gt; — Disconnect from Wi-Fi
+/wake &lt;MAC or IP&gt; — Wake device with Wake-on-LAN
 /block &lt;MAC&gt; — Block device permanently
 /name &lt;MAC&gt; &lt;hostname&gt; — Save a device name by MAC
 /unblock &lt;MAC&gt; — Remove block

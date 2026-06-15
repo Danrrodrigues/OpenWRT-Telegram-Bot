@@ -38,6 +38,13 @@ T_FIX_OK="🛠️ Firewall reparado. Regras de bloqueio recarregadas e bloqueios
 T_FIX_REVERTED="⚠️ Reparo cancelado: as novas regras do firewall não carregariam, então nada foi alterado e sua internet está segura. Verifique os logs."
 T_FIX_NONFT="Nada a reparar: este roteador não tem <code>nft</code> disponível."
 
+# --- wake command ---
+T_WAKE_USAGE="Uso: <code>/wake &lt;MAC ou IP&gt;</code>"
+T_WAKE_NOT_FOUND="❌ Dispositivo não encontrado: <code>%s</code>"
+T_WAKE_MISSING_ETHERWAKE="❌ etherwake não está instalado. Instale com: <code>opkg update &amp;&amp; opkg install etherwake</code>"
+T_WAKE_SENT="✅ Pacote Wake-on-LAN enviado para <b>%s</b> (<code>%s</code>)."
+T_WAKE_FAILED="❌ Não foi possível enviar o pacote Wake-on-LAN para <b>%s</b> (<code>%s</code>)."
+
 # --- lang command ---
 T_LANG_CURRENT="Idioma atual: %s
 Envie /lang en ou /lang pt para alterar."
@@ -50,6 +57,7 @@ devices|Listar dispositivos conectados
 status|Status do roteador (CPU, RAM, uptime)
 alerts|Configurar alertas (off/known/unknown/all)
 kick|Desconectar dispositivo (MAC ou IP)
+wake|Acordar dispositivo com Wake-on-LAN
 block|Bloquear dispositivo permanentemente (MAC)
 unblock|Remover bloqueio (MAC)
 name|Salvar nome para um dispositivo (MAC nome)

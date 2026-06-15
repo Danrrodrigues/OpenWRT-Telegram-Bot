@@ -30,6 +30,7 @@ Controle e monitore sua rede doméstica diretamente pelo Telegram. Roda como um 
 - [x] 🔔 Alerta quando um novo dispositivo entra na rede
 - [x] 📋 Lista todos os dispositivos conectados (nome, IP, MAC)
 - [x] ⚡ Desconectar (kick) um dispositivo do Wi-Fi
+- [x] 🌙 Acordar um dispositivo com Wake-on-LAN
 - [x] 🚫 Bloquear um dispositivo permanentemente (persiste após reinicialização)
 - [x] 📶 Limitar velocidade de download/upload de um dispositivo
 - [x] 📊 Status do roteador (CPU, RAM, tempo ligado)
@@ -44,6 +45,7 @@ Controle e monitore sua rede doméstica diretamente pelo Telegram. Roda como um 
 - OpenWRT 23.05 ou superior
 - `curl` (instalado automaticamente se ausente)
 - `jsonfilter` (geralmente pré-instalado no OpenWRT)
+- `etherwake` (opcional, necessário para `/wake`)
 - Token de bot Telegram do [@BotFather](https://t.me/BotFather)
 
 ---
@@ -96,6 +98,7 @@ Veja o guia completo em [docs/installation.md](docs/installation.md).
 |---------|-----------|
 | `/devices` | Lista dispositivos conectados |
 | `/kick <MAC ou IP>` | Desconecta do Wi-Fi |
+| `/wake <MAC ou IP>` | Acorda dispositivo com Wake-on-LAN |
 | `/name <MAC> <hostname>` | Salva um nome amigável de dispositivo por MAC |
 | `/block <MAC>` | Bloqueia permanentemente |
 | `/unblock <MAC>` | Remove o bloqueio |
@@ -112,6 +115,12 @@ Exemplo:
 
 ```sh
 /name 92:27:f0:1a:66:6c celular-marcia
+```
+
+Wake-on-LAN usa `etherwake` em `br-lan` por padrão. Instale com:
+
+```sh
+opkg update && opkg install etherwake
 ```
 
 Os nomes dos dispositivos sao resolvidos nesta ordem: nome estatico do host DHCP do OpenWRT para o MAC, hostname do lease DHCP e, por fim, `Unknown`.
@@ -147,13 +156,13 @@ src/
 │   └── pt.sh         — Textos em português + descrições dos comandos
 └── modules/
     ├── monitor.sh    — Detecção de novo dispositivo (/tmp/dhcp.leases)
-    ├── devices.sh    — Listar / kick / bloquear / status
+    ├── devices.sh    — Listar / kick / wake / bloquear / status
     ├── bandwidth.sh  — Limite de velocidade (nft-qos ou tc)
     ├── updater.sh    — Atualização e rollback remotos via Telegram
     └── notify.sh     — Menu de comandos automático + aviso diário de versão
 ```
 
-- **Zero pacotes extras** — apenas `curl` e `jsonfilter` são necessários
+- **Pacotes obrigatórios mínimos** — apenas `curl` e `jsonfilter` são necessários; `/wake` também precisa de `etherwake`
 - **Config UCI** em `/etc/config/telegram-bot` (chmod 600)
 - **Daemon ou cron** — configurável na instalação
 - **nft-qos ou fallback tc** para limitação de velocidade
@@ -187,6 +196,7 @@ Veja todas as opções em [docs/configuration.md](docs/configuration.md).
 
 ## Mudancas Recentes
 
+- `v0.3.7` — Adiciona `/wake <MAC ou IP>` para Wake-on-LAN via `etherwake` em `br-lan`, incluindo resolução de MAC por lease DHCP, entradas no menu de comandos do Telegram e documentação.
 - `v0.3.1` — Corrige o `/update` e o `/rollback` remotos que abortavam no meio: o atualizador rodava como filho do serviço do bot, então reiniciar o serviço matava o próprio atualizador antes de terminar, deixando o bot parado e atualizado pela metade. Agora a atualização copia os arquivos antes de reiniciar e roda desacoplada da árvore de processos do serviço (`setsid`).
 - `v0.3.0` — Menu de comandos automático (`setMyCommands`), aviso pós-atualização, aviso diário de versão nova às 8h e base de internacionalização (en/pt) com a opção `lang`.
 - `v0.2.2` — Corrige todos os avisos do shellcheck no projeto (bugs reais de `A && B || C`, `echo -n` não-POSIX, código de teste morto), fixa o shellcheck do CI na v0.11.0 para casar com o hook de pre-push local e adiciona um hook de pre-push que roda o shellcheck antes do push.

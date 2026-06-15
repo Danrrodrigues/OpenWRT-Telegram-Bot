@@ -10,14 +10,17 @@ ROOT_DIR=$(cd "$(dirname "$0")/.." && pwd)
 TEST_TMP="${TMPDIR:-/tmp}/telegram-bot-devices-test-$$"
 LEASES_FILE="$TEST_TMP/dhcp.leases"
 MESSAGES_FILE="$TEST_TMP/messages"
+ETHERWAKE_CALLS_FILE="$TEST_TMP/etherwake-calls"
 
 mkdir -p "$TEST_TMP"
 : > "$MESSAGES_FILE"
+: > "$ETHERWAKE_CALLS_FILE"
 
 WIFI_MACS=""
 WIFI_MAC_SSID=""
 IW_INTERFACES=""
 HOSTAPD_RESULT="OK"
+ETHERWAKE_RC=0
 
 # --- mocks ---
 
@@ -55,10 +58,23 @@ hostapd_cli() {
     printf '%s\n' "$HOSTAPD_RESULT"
 }
 
+install_etherwake_mock() {
+    eval 'etherwake() {
+        printf "%s\n" "$*" >> "$ETHERWAKE_CALLS_FILE"
+        return "$ETHERWAKE_RC"
+    }'
+}
+
+uninstall_etherwake_mock() {
+    unset -f etherwake 2>/dev/null || true
+}
+
 # --- helpers ---
 
 reset_output() {
     : > "$MESSAGES_FILE"
+    : > "$ETHERWAKE_CALLS_FILE"
+    ETHERWAKE_RC=0
 }
 
 write_leases() {
@@ -67,6 +83,10 @@ write_leases() {
 
 read_messages() {
     cat "$MESSAGES_FILE"
+}
+
+read_etherwake_calls() {
+    cat "$ETHERWAKE_CALLS_FILE"
 }
 
 assert_contains() {
@@ -311,6 +331,77 @@ EOF
     assert_contains "$messages" "Could not kick" "failed deauth should show could-not-kick warning"
 }
 
+# --- devices_wake ---
+
+test_wake_no_target_shows_usage() {
+    reset_output
+    uninstall_etherwake_mock
+    devices_wake "123" ""
+    messages=$(read_messages)
+    assert_contains "$messages" "Usage: <code>/wake &lt;MAC or IP&gt;</code>" "missing target should return wake usage"
+}
+
+test_wake_unknown_ip_shows_not_found() {
+    write_leases <<'EOF'
+1717420000 aa:bb:cc:dd:ee:ff 192.168.1.10 Phone *
+EOF
+    reset_output
+    uninstall_etherwake_mock
+    devices_wake "123" "192.168.1.99"
+    messages=$(read_messages)
+    assert_contains "$messages" "Device not found" "unknown wake target should return not-found error"
+}
+
+test_wake_missing_etherwake_shows_install_hint() {
+    write_leases <<'EOF'
+1717420000 aa:bb:cc:dd:ee:ff 192.168.1.10 Phone *
+EOF
+    reset_output
+    uninstall_etherwake_mock
+    devices_wake "123" "aa:bb:cc:dd:ee:ff"
+    messages=$(read_messages)
+    assert_contains "$messages" "etherwake is not installed" "missing etherwake should explain the missing package" || return 1
+    assert_contains "$messages" "opkg update &amp;&amp; opkg install etherwake" "missing etherwake should include install command"
+}
+
+test_wake_by_mac_sends_packet_on_br_lan() {
+    write_leases <<'EOF'
+1717420000 aa:bb:cc:dd:ee:ff 192.168.1.10 Phone *
+EOF
+    reset_output
+    install_etherwake_mock
+    devices_wake "123" "AA:BB:CC:DD:EE:FF"
+    calls=$(read_etherwake_calls)
+    messages=$(read_messages)
+    assert_contains "$calls" "-i br-lan aa:bb:cc:dd:ee:ff" "wake should call etherwake on br-lan with normalized MAC" || return 1
+    assert_contains "$messages" "Wake packet sent to <b>Phone</b> (<code>aa:bb:cc:dd:ee:ff</code>)" "successful wake should confirm hostname and MAC"
+}
+
+test_wake_by_ip_resolves_mac_before_sending() {
+    write_leases <<'EOF'
+1717420000 aa:bb:cc:dd:ee:ff 192.168.1.10 Phone *
+EOF
+    reset_output
+    install_etherwake_mock
+    devices_wake "123" "192.168.1.10"
+    calls=$(read_etherwake_calls)
+    assert_contains "$calls" "-i br-lan aa:bb:cc:dd:ee:ff" "wake by IP should resolve MAC from DHCP leases before sending"
+}
+
+test_wake_etherwake_failure_shows_error() {
+    write_leases <<'EOF'
+1717420000 aa:bb:cc:dd:ee:ff 192.168.1.10 Phone *
+EOF
+    reset_output
+    install_etherwake_mock
+    # shellcheck disable=SC2034
+    ETHERWAKE_RC=1
+    devices_wake "123" "aa:bb:cc:dd:ee:ff"
+    messages=$(read_messages)
+    assert_contains "$messages" "Could not send wake packet" "etherwake failure should show friendly error" || return 1
+    assert_not_contains "$messages" "Wake packet sent" "etherwake failure should not claim success"
+}
+
 # --- run ---
 
 FAILURES=0
@@ -335,6 +426,13 @@ run_test "kick: offline device warns not on Wi-Fi"          test_kick_device_not
 run_test "kick: kicking by IP for offline device warns"     test_kick_device_by_ip_not_on_wifi_shows_warning
 run_test "kick: Wi-Fi device deauths successfully"          test_kick_wifi_device_deauths_successfully
 run_test "kick: deauth failure shows could-not-kick"        test_kick_wifi_device_deauth_failure_shows_warning
+
+run_test "wake: missing target shows usage"                 test_wake_no_target_shows_usage
+run_test "wake: unknown IP shows not-found error"           test_wake_unknown_ip_shows_not_found
+run_test "wake: missing etherwake shows install hint"       test_wake_missing_etherwake_shows_install_hint
+run_test "wake: MAC sends packet on br-lan"                 test_wake_by_mac_sends_packet_on_br_lan
+run_test "wake: IP resolves MAC before sending"             test_wake_by_ip_resolves_mac_before_sending
+run_test "wake: etherwake failure shows error"              test_wake_etherwake_failure_shows_error
 
 rm -rf "$TEST_TMP"
 
