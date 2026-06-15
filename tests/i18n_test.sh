@@ -57,6 +57,7 @@ test_loads_english() {
     assert_contains "$T_UPDATED" "updated" "en uses English wording" || return 1
     assert_contains "$I18N_COMMANDS" "update|" "command list includes update" || return 1
     assert_contains "$I18N_COMMANDS" "rollback|" "command list includes rollback" || return 1
+    assert_contains "$I18N_COMMANDS" "wake|Wake device with Wake-on-LAN" "command list includes wake" || return 1
 }
 
 test_loads_portuguese() {
@@ -65,6 +66,7 @@ test_loads_portuguese() {
     assert_nonempty "$T_UPDATED" "pt T_UPDATED defined" || return 1
     assert_contains "$T_UPDATED" "atualizado" "pt uses Portuguese wording" || return 1
     assert_contains "$I18N_COMMANDS" "Listar dispositivos" "pt descriptions present" || return 1
+    assert_contains "$I18N_COMMANDS" "wake|Acordar dispositivo com Wake-on-LAN" "pt command list includes wake" || return 1
 }
 
 test_unknown_lang_falls_back_to_english() {

@@ -13,6 +13,7 @@ All commands are sent as Telegram messages to your bot.
 | `/alerts unknown` | Notify only first-time devices | Notifica apenas dispositivos vistos pela primeira vez |
 | `/alerts all` | Notify first-time devices and reconnections | Notifica dispositivos novos e reconexões |
 | `/kick <MAC or IP>` | Disconnect device from Wi-Fi | Desconecta dispositivo do Wi-Fi |
+| `/wake <MAC or IP>` | Wake device with Wake-on-LAN | Acorda dispositivo com Wake-on-LAN |
 | `/name <MAC> <hostname>` | Save a friendly device name by MAC | Salva um nome amigável de dispositivo por MAC |
 | `/block <MAC>` | Block device permanently | Bloqueia dispositivo permanentemente |
 | `/unblock <MAC>` | Remove permanent block | Remove bloqueio permanente |
@@ -45,6 +46,22 @@ Connected Devices
 
 # By IP
 /kick 192.168.1.100
+```
+
+### /wake
+
+```sh
+# By MAC
+/wake aa:bb:cc:dd:ee:ff
+
+# By IP from DHCP leases
+/wake 192.168.1.100
+```
+
+Wake-on-LAN sends the packet with `etherwake -i br-lan`. If the package is missing, install it on the router:
+
+```sh
+opkg update && opkg install etherwake
 ```
 
 ### /block and /unblock

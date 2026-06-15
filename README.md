@@ -28,6 +28,7 @@ Control and monitor your home network directly from Telegram. Runs as a lightwei
 - [x] 🔔 Alert when a new device joins the network
 - [x] 📋 List all connected devices (name, IP, MAC)
 - [x] ⚡ Disconnect (kick) a device from Wi-Fi
+- [x] 🌙 Wake a device with Wake-on-LAN
 - [x] 🚫 Block a device permanently (persists across reboots)
 - [x] 📶 Limit a device's download/upload speed
 - [x] 📊 Router status (CPU, RAM, uptime)
@@ -42,6 +43,7 @@ Control and monitor your home network directly from Telegram. Runs as a lightwei
 - OpenWRT 23.05 or later
 - `curl` (installed automatically if missing)
 - `jsonfilter` (usually pre-installed on OpenWRT)
+- `etherwake` (optional, required for `/wake`)
 - A Telegram bot token from [@BotFather](https://t.me/BotFather)
 
 ---
@@ -94,6 +96,7 @@ See [docs/installation.md](docs/installation.md) for the full guide.
 |---------|-------------|
 | `/devices` | List connected devices |
 | `/kick <MAC or IP>` | Disconnect from Wi-Fi |
+| `/wake <MAC or IP>` | Wake device with Wake-on-LAN |
 | `/name <MAC> <hostname>` | Save a friendly device name by MAC |
 | `/block <MAC>` | Block permanently |
 | `/unblock <MAC>` | Remove block |
@@ -110,6 +113,12 @@ Example:
 
 ```sh
 /name 92:27:f0:1a:66:6c celular-marcia
+```
+
+Wake-on-LAN uses `etherwake` on `br-lan` by default. Install it with:
+
+```sh
+opkg update && opkg install etherwake
 ```
 
 Device names resolve in this order: static OpenWRT DHCP host name for the MAC, DHCP lease hostname, then `Unknown`.
@@ -145,13 +154,13 @@ src/
 │   └── pt.sh         — Portuguese strings + command descriptions
 └── modules/
     ├── monitor.sh    — New device detection (/tmp/dhcp.leases)
-    ├── devices.sh    — List / kick / block / status
+    ├── devices.sh    — List / kick / wake / block / status
     ├── bandwidth.sh  — Speed limiting (nft-qos or tc)
     ├── updater.sh    — Remote update and rollback via Telegram
     └── notify.sh     — Automatic command menu + daily version check
 ```
 
-- **Zero extra packages** — only `curl` and `jsonfilter` are required
+- **Minimal required packages** — only `curl` and `jsonfilter` are required; `/wake` also needs `etherwake`
 - **UCI config** at `/etc/config/telegram-bot` (chmod 600)
 - **Daemon or cron** — configurable at install time
 - **nft-qos or tc fallback** for speed limiting
@@ -185,6 +194,7 @@ See [docs/configuration.md](docs/configuration.md) for all options.
 
 ## Changelog
 
+- `v0.3.7` — Added `/wake <MAC or IP>` for Wake-on-LAN via `etherwake` on `br-lan`, including DHCP lease MAC resolution, Telegram command menu entries, and documentation.
 - `v0.3.1` — Fixed remote `/update` and `/rollback` aborting mid-way: the updater ran as a child of the bot service, so restarting the service killed the updater itself before it finished, leaving the bot stopped and half-updated. The update now copies files before restarting and runs detached from the service process tree (`setsid`).
 - `v0.3.0` — Automatic command menu (`setMyCommands`), post-update notice, daily new-version check at 08:00, and an internationalization base (en/pt) with the `lang` option.
 - `v0.2.2` — Fixed all shellcheck warnings across the codebase (real `A && B || C` bugs, non-POSIX `echo -n`, dead test code), pinned CI shellcheck to v0.11.0 to match the local pre-push hook, and added a pre-push hook that runs shellcheck before pushing.
