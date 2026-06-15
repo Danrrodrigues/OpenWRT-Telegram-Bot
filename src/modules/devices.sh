@@ -87,6 +87,45 @@ devices_kick() {
     fi
 }
 
+# Command: /wake <mac|ip>
+devices_wake() {
+    local chat_id="$1"
+    local target="$2"
+    local mac hostname escaped_target wake_iface
+
+    wake_iface="${WAKE_INTERFACE:-br-lan}"
+
+    if [ -z "$target" ]; then
+        telegram_send "$chat_id" "${T_WAKE_USAGE:-Usage: <code>/wake &lt;MAC or IP&gt;</code>}"
+        return
+    fi
+
+    mac=$(_devices_resolve_mac "$target")
+    if [ -z "$mac" ]; then
+        escaped_target=$(device_identity_escape_html "$target")
+        # shellcheck disable=SC2059
+        telegram_send "$chat_id" "$(printf "${T_WAKE_NOT_FOUND:-❌ Device not found: <code>%s</code>}" "$escaped_target")"
+        return
+    fi
+
+    if ! command -v etherwake >/dev/null 2>&1; then
+        telegram_send "$chat_id" "${T_WAKE_MISSING_ETHERWAKE:-❌ etherwake is not installed. Install it with: <code>opkg update &amp;&amp; opkg install etherwake</code>}"
+        return
+    fi
+
+    hostname=$(device_identity_hostname "$mac")
+
+    if etherwake -i "$wake_iface" "$mac" >/dev/null 2>&1; then
+        # shellcheck disable=SC2059
+        telegram_send "$chat_id" "$(printf "${T_WAKE_SENT:-✅ Wake packet sent to <b>%s</b> (<code>%s</code>).}" "$hostname" "$mac")"
+        log_info "devices: sent wake packet to $mac ($hostname) via $wake_iface"
+        return
+    fi
+
+    # shellcheck disable=SC2059
+    telegram_send "$chat_id" "$(printf "${T_WAKE_FAILED:-❌ Could not send wake packet to <b>%s</b> (<code>%s</code>).}" "$hostname" "$mac")"
+}
+
 # Command: /block <mac>
 devices_block() {
     local chat_id="$1"

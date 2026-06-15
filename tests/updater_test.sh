@@ -159,7 +159,10 @@ test_network_failure() {
 }
 
 test_update_confirm_sends_in_progress_message() {
+    mkdir -p "${UPDATER_INSTALL_DIR}/core" "${UPDATER_INSTALL_DIR}/modules"
+    printf '#!/bin/sh\n' > "${UPDATER_INSTALL_DIR}/bot.sh"
     updater_check "12345" "confirm"
+    wait
     assert_contains "$MESSAGES" "Updating" "should send update in progress message" || return 1
 }
 

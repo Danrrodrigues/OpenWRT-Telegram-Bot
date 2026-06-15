@@ -38,6 +38,13 @@ T_FIX_OK="🛠️ Firewall repaired. Blocklist rules reloaded and active blocks/
 T_FIX_REVERTED="⚠️ Repair aborted: the new firewall rules would not load, so nothing was changed and your internet is safe. Check the logs."
 T_FIX_NONFT="Nothing to repair: this router has no <code>nft</code> available."
 
+# --- wake command ---
+T_WAKE_USAGE="Usage: <code>/wake &lt;MAC or IP&gt;</code>"
+T_WAKE_NOT_FOUND="❌ Device not found: <code>%s</code>"
+T_WAKE_MISSING_ETHERWAKE="❌ etherwake is not installed. Install it with: <code>opkg update &amp;&amp; opkg install etherwake</code>"
+T_WAKE_SENT="✅ Wake packet sent to <b>%s</b> (<code>%s</code>)."
+T_WAKE_FAILED="❌ Could not send wake packet to <b>%s</b> (<code>%s</code>)."
+
 # --- lang command ---
 T_LANG_CURRENT="Current language: %s
 Send /lang en or /lang pt to switch."
@@ -50,6 +57,7 @@ devices|List connected devices
 status|Router status (CPU, RAM, uptime)
 alerts|Configure alerts (off/known/unknown/all)
 kick|Disconnect a device (MAC or IP)
+wake|Wake device with Wake-on-LAN
 block|Block a device permanently (MAC)
 unblock|Remove a block (MAC)
 name|Save a name for a device (MAC name)

@@ -239,5 +239,8 @@ bot_source=$(cat "$ROOT_DIR/src/bot.sh")
 assert_contains "$bot_source" "/name)" "bot dispatch should include /name command"
 assert_contains "$bot_source" "devices_set_name \"\$chat_id\" \"\$args\"" "bot dispatch should call devices_set_name"
 assert_contains "$bot_source" "/name &lt;MAC&gt; &lt;hostname&gt; — Save a device name by MAC" "help output should document /name"
+assert_contains "$bot_source" "/wake)" "bot dispatch should include /wake command"
+assert_contains "$bot_source" "devices_wake \"\$chat_id\" \"\$args\"" "bot dispatch should call devices_wake"
+assert_contains "$bot_source" "/wake &lt;MAC or IP&gt; — Wake device with Wake-on-LAN" "help output should document /wake"
 
 rm -rf "$TEST_TMP"
