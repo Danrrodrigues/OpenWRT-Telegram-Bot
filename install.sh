@@ -133,6 +133,8 @@ _copy_files() {
     cp "${SCRIPT_DIR}/src/core/logger.sh"        "${INSTALL_DIR}/core/logger.sh"
     cp "${SCRIPT_DIR}/src/core/i18n.sh"          "${INSTALL_DIR}/core/i18n.sh"
     cp "${SCRIPT_DIR}/src/core/telegram.sh"      "${INSTALL_DIR}/core/telegram.sh"
+    cp "${SCRIPT_DIR}/src/core/keyboard.sh"      "${INSTALL_DIR}/core/keyboard.sh"
+    cp "${SCRIPT_DIR}/src/core/session.sh"       "${INSTALL_DIR}/core/session.sh"
     cp "${SCRIPT_DIR}/src/modules/monitor.sh"    "${INSTALL_DIR}/modules/monitor.sh"
     cp "${SCRIPT_DIR}/src/modules/devices.sh"    "${INSTALL_DIR}/modules/devices.sh"
     cp "${SCRIPT_DIR}/src/modules/firewall.sh"   "${INSTALL_DIR}/modules/firewall.sh"

@@ -60,6 +60,20 @@ T_REBOOT_CONFIRM="⚠️ This will reboot the router and drop the network for ab
 Send /reboot confirm to proceed."
 T_REBOOT_RUNNING="🔄 Rebooting now... the bot will be back shortly.
 Send /status in a minute to confirm."
+T_RESTARTDNS_CONFIRM="This will restart the DNS cache (dnsmasq)."
+
+# --- inline keyboard buttons (confirm/cancel, device pickers) ---
+T_BTN_CONFIRM="✅ Confirm"
+T_BTN_CANCEL="❌ Cancel"
+T_CANCELLED="Cancelled."
+T_KICK_PICK="Pick a device to kick:"
+T_BLOCK_PICK="Pick a device to block:"
+T_UNBLOCK_PICK="Pick a device to unblock:"
+T_WAKE_PICK="Pick a device to wake:"
+T_NAME_PICK="Pick a device to name:"
+T_LIMIT_PICK="Pick a device to limit:"
+T_LIMIT_PROMPT="Send the speed limit as <code>&lt;down Mbps&gt; &lt;up Mbps&gt;</code>, e.g. <code>10 5</code>."
+T_NAME_PROMPT="Send the new name for this device."
 
 I18N_COMMANDS='start|Show help and available commands
 devices|List connected devices

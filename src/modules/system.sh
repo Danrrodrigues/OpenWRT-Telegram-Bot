@@ -21,9 +21,18 @@ _system_schedule_reboot() {
     return 0
 }
 
-# Command: /restartdns
+# Command: /restartdns [confirm]
 system_restartdns() {
     local chat_id="$1"
+    local args="$2"
+
+    if [ "$args" != "confirm" ]; then
+        # shellcheck disable=SC2154
+        telegram_send_keyboard "$chat_id" "$T_RESTARTDNS_CONFIRM" \
+            "${T_BTN_CONFIRM}|restartdns:confirm" "${T_BTN_CANCEL}|cancel:noop"
+        return 0
+    fi
+
     log_info "system: /restartdns requested by $chat_id"
 
     if ! _system_dnsmasq_available; then
@@ -51,7 +60,8 @@ system_reboot() {
 
     if [ "$args" != "confirm" ]; then
         # shellcheck disable=SC2154
-        telegram_send "$chat_id" "$T_REBOOT_CONFIRM"
+        telegram_send_keyboard "$chat_id" "$T_REBOOT_CONFIRM" \
+            "${T_BTN_CONFIRM}|reboot:confirm" "${T_BTN_CANCEL}|cancel:noop"
         return 0
     fi
 

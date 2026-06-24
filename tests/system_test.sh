@@ -5,6 +5,7 @@ set -u
 ROOT_DIR=$(cd "$(dirname "$0")/.." && pwd)
 
 MESSAGES=""
+KEYBOARDS=""
 
 telegram_send() {
     local chat_id="$1"
@@ -13,13 +14,23 @@ telegram_send() {
 "
 }
 
+telegram_send_keyboard() {
+    local chat_id="$1"
+    local text="$2"
+    shift 2
+    KEYBOARDS="${KEYBOARDS}${chat_id}|${text}|$*
+"
+}
+
 # i18n strings for system messages
 T_RESTARTDNS_OK="DNS cache restarted (dnsmasq)."
 T_RESTARTDNS_FAIL="Failed to restart dnsmasq. Check the logs."
 T_RESTARTDNS_MISSING="Nothing to restart: this router has no dnsmasq init script."
-T_REBOOT_CONFIRM="This will reboot the router and drop the network for about a minute.
-Send /reboot confirm to proceed."
+T_RESTARTDNS_CONFIRM="This will restart dnsmasq."
+T_REBOOT_CONFIRM="This will reboot the router and drop the network for about a minute."
 T_REBOOT_RUNNING="Rebooting now... the bot will be back shortly."
+T_BTN_CONFIRM="Confirm"
+T_BTN_CANCEL="Cancel"
 
 log_info()  { :; }
 log_error() { :; }
@@ -74,6 +85,7 @@ run_test() {
     local name="$1"
     shift
     MESSAGES=""
+    KEYBOARDS=""
     _DNSMASQ_AVAILABLE_MOCK=0
     _DNSMASQ_RESTART_RC=0
     _DNSMASQ_RESTART_CALLED=0
@@ -87,30 +99,38 @@ run_test() {
 
 # ---- /restartdns tests ----
 
-test_restartdns_success() {
+test_restartdns_no_args_shows_keyboard() {
+    system_restartdns "123" ""
+    assert_equals "$MESSAGES" "" "should not restart yet without confirm" || return 1
+    assert_contains "$KEYBOARDS" "restartdns:confirm" "should offer a confirm button" || return 1
+    assert_equals "$_DNSMASQ_RESTART_CALLED" "0" "should never call restart without confirm"
+}
+
+test_restartdns_confirm_success() {
     _DNSMASQ_RESTART_RC=0
-    system_restartdns "123"
+    system_restartdns "123" "confirm"
     assert_contains "$MESSAGES" "restarted" "should confirm dnsmasq restarted" || return 1
 }
 
-test_restartdns_failure() {
+test_restartdns_confirm_failure() {
     _DNSMASQ_RESTART_RC=1
-    system_restartdns "123"
+    system_restartdns "123" "confirm"
     assert_contains "$MESSAGES" "Failed" "should report restart failure" || return 1
 }
 
-test_restartdns_missing() {
+test_restartdns_confirm_missing() {
     _DNSMASQ_AVAILABLE_MOCK=1
-    system_restartdns "123"
+    system_restartdns "123" "confirm"
     assert_contains "$MESSAGES" "Nothing to restart" "should report missing dnsmasq" || return 1
     assert_equals "$_DNSMASQ_RESTART_CALLED" "0" "should never call restart when dnsmasq is missing"
 }
 
 # ---- /reboot tests ----
 
-test_reboot_without_confirm() {
+test_reboot_without_confirm_shows_keyboard() {
     system_reboot "123" ""
-    assert_contains "$MESSAGES" "confirm" "should ask for confirmation" || return 1
+    assert_equals "$MESSAGES" "" "should not reboot yet without confirm" || return 1
+    assert_contains "$KEYBOARDS" "reboot:confirm" "should offer a confirm button" || return 1
     assert_equals "$_REBOOT_SCHEDULED" "0" "should not schedule reboot without confirm"
 }
 
@@ -122,11 +142,12 @@ test_reboot_with_confirm() {
 
 # ---- run all ----
 
-run_test "/restartdns: success"                test_restartdns_success
-run_test "/restartdns: failure"                test_restartdns_failure
-run_test "/restartdns: dnsmasq missing"        test_restartdns_missing
-run_test "/reboot: without confirm asks first" test_reboot_without_confirm
-run_test "/reboot: confirm schedules reboot"   test_reboot_with_confirm
+run_test "/restartdns: no args shows confirm keyboard" test_restartdns_no_args_shows_keyboard
+run_test "/restartdns: confirm success"                test_restartdns_confirm_success
+run_test "/restartdns: confirm failure"                test_restartdns_confirm_failure
+run_test "/restartdns: confirm dnsmasq missing"        test_restartdns_confirm_missing
+run_test "/reboot: without confirm shows keyboard"     test_reboot_without_confirm_shows_keyboard
+run_test "/reboot: confirm schedules reboot"           test_reboot_with_confirm
 
 if [ "$FAILURES" -ne 0 ]; then
     exit 1

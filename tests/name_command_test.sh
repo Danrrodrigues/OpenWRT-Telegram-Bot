@@ -12,15 +12,24 @@ UCI_CALLS_FILE="$TEST_TMP/uci-calls"
 MESSAGES_FILE="$TEST_TMP/messages"
 NEXT_SECTION_FILE="$TEST_TMP/next-section"
 BOT_SOURCE_FILE="$TEST_TMP/bot-functions.sh"
+LEASES_FILE="$TEST_TMP/dhcp.leases"
 
 mkdir -p "$TEST_TMP"
 : > "$UCI_DB_FILE"
 : > "$UCI_CALLS_FILE"
 : > "$MESSAGES_FILE"
+: > "$LEASES_FILE"
 printf '1\n' > "$NEXT_SECTION_FILE"
 
 telegram_send() {
     printf '%s|%s\n' "$1" "$2" >> "$MESSAGES_FILE"
+}
+
+telegram_send_keyboard() {
+    local chat_id="$1"
+    local text="$2"
+    shift 2
+    printf '%s|%s|%s\n' "$chat_id" "$text" "$*" >> "$MESSAGES_FILE"
 }
 
 log_info() {
@@ -155,7 +164,7 @@ uci() {
 reset_output
 devices_set_name "123" ""
 messages=$(read_messages)
-assert_contains "$messages" "Usage: <code>/name &lt;MAC&gt; &lt;hostname&gt;</code>" "missing arguments should return usage"
+assert_contains "$messages" "No devices found in DHCP leases" "no args with no leases should report no devices instead of a usage error"
 
 reset_output
 devices_set_name "123" "not-a-mac kitchen-tablet"
@@ -217,6 +226,13 @@ awk -v root_dir="$ROOT_DIR" '
 
 telegram_send() {
     printf '%s|%s\n' "$1" "$2" >> "$MESSAGES_FILE"
+}
+
+telegram_send_keyboard() {
+    local chat_id="$1"
+    local text="$2"
+    shift 2
+    printf '%s|%s|%s\n' "$chat_id" "$text" "$*" >> "$MESSAGES_FILE"
 }
 
 log_info() {

@@ -67,7 +67,8 @@ updater_check() {
     fi
 
     # shellcheck disable=SC2059
-    telegram_send "$chat_id" "$(printf "$T_UPDATE_AVAILABLE_CMD" "$VERSION" "$remote_version")"
+    telegram_send_keyboard "$chat_id" "$(printf "$T_UPDATE_AVAILABLE_CMD" "$VERSION" "$remote_version")" \
+        "${T_BTN_CONFIRM}|update:confirm" "${T_BTN_CANCEL}|cancel:noop"
 }
 
 updater_run() {
@@ -121,7 +122,8 @@ updater_rollback() {
     fi
 
     # shellcheck disable=SC2059
-    telegram_send "$chat_id" "$(printf "$T_ROLLBACK_AVAILABLE" "$backup_version" "$VERSION")"
+    telegram_send_keyboard "$chat_id" "$(printf "$T_ROLLBACK_AVAILABLE" "$backup_version" "$VERSION")" \
+        "${T_BTN_CONFIRM}|rollback:confirm" "${T_BTN_CANCEL}|cancel:noop"
 }
 
 _updater_do_rollback() {
