@@ -136,6 +136,7 @@ _copy_files() {
     cp "${SCRIPT_DIR}/src/modules/monitor.sh"    "${INSTALL_DIR}/modules/monitor.sh"
     cp "${SCRIPT_DIR}/src/modules/devices.sh"    "${INSTALL_DIR}/modules/devices.sh"
     cp "${SCRIPT_DIR}/src/modules/firewall.sh"   "${INSTALL_DIR}/modules/firewall.sh"
+    cp "${SCRIPT_DIR}/src/modules/system.sh"     "${INSTALL_DIR}/modules/system.sh"
     cp "${SCRIPT_DIR}/src/modules/bandwidth.sh"  "${INSTALL_DIR}/modules/bandwidth.sh"
     cp "${SCRIPT_DIR}/src/modules/updater.sh"    "${INSTALL_DIR}/modules/updater.sh"
     cp "${SCRIPT_DIR}/src/modules/notify.sh"     "${INSTALL_DIR}/modules/notify.sh"

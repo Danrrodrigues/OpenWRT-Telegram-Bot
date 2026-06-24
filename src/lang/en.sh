@@ -52,6 +52,15 @@ T_LANG_CHANGED="Language changed to %s"
 T_LANG_SAME="Language is already set to %s"
 T_LANG_INVALID="Unknown language: %s. Available: en, pt"
 
+# --- system command (restartdns / reboot) ---
+T_RESTARTDNS_OK="✅ DNS cache restarted (dnsmasq)."
+T_RESTARTDNS_FAIL="❌ Failed to restart dnsmasq. Check the logs."
+T_RESTARTDNS_MISSING="Nothing to restart: this router has no <code>dnsmasq</code> init script."
+T_REBOOT_CONFIRM="⚠️ This will reboot the router and drop the network for about a minute.
+Send /reboot confirm to proceed."
+T_REBOOT_RUNNING="🔄 Rebooting now... the bot will be back shortly.
+Send /status in a minute to confirm."
+
 I18N_COMMANDS='start|Show help and available commands
 devices|List connected devices
 status|Router status (CPU, RAM, uptime)
@@ -66,5 +75,7 @@ unlimit|Remove speed limit (MAC)
 update|Check for updates (use confirm to apply)
 rollback|Restore previous version (use confirm to apply)
 fix|Repair firewall and blocklist setup
+restartdns|Restart DNS cache (dnsmasq)
+reboot|Reboot the router (use confirm to apply)
 lang|Change bot language (en or pt)
 help|Show this message'

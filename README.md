@@ -107,6 +107,8 @@ See [docs/installation.md](docs/installation.md) for the full guide.
 | `/update` | Check for updates (`/update confirm` to apply) |
 | `/rollback` | Restore previous version (`/rollback confirm` to apply) |
 | `/fix` | Repair firewall blocklist (use after a manual `fw4 reload`) |
+| `/restartdns` | Restart DNS cache (dnsmasq) |
+| `/reboot` | Reboot the router (`/reboot confirm` to apply) |
 | `/help` | Show all commands |
 
 Example:
@@ -194,6 +196,7 @@ See [docs/configuration.md](docs/configuration.md) for all options.
 
 ## Changelog
 
+- `v0.3.8` — Added `/restartdns` to restart the dnsmasq DNS cache and `/reboot confirm` to reboot the router remotely via Telegram.
 - `v0.3.7` — Added `/wake <MAC or IP>` for Wake-on-LAN via `etherwake` on `br-lan`, including DHCP lease MAC resolution, Telegram command menu entries, and documentation.
 - `v0.3.1` — Fixed remote `/update` and `/rollback` aborting mid-way: the updater ran as a child of the bot service, so restarting the service killed the updater itself before it finished, leaving the bot stopped and half-updated. The update now copies files before restarting and runs detached from the service process tree (`setsid`).
 - `v0.3.0` — Automatic command menu (`setMyCommands`), post-update notice, daily new-version check at 08:00, and an internationalization base (en/pt) with the `lang` option.
