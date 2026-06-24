@@ -52,6 +52,15 @@ T_LANG_CHANGED="Idioma alterado para %s"
 T_LANG_SAME="O idioma já está definido como %s"
 T_LANG_INVALID="Idioma desconhecido: %s. Disponíveis: en, pt"
 
+# --- system command (restartdns / reboot) ---
+T_RESTARTDNS_OK="✅ Cache de DNS reiniciado (dnsmasq)."
+T_RESTARTDNS_FAIL="❌ Falha ao reiniciar o dnsmasq. Verifique os logs."
+T_RESTARTDNS_MISSING="Nada a reiniciar: este roteador não tem o script de init do <code>dnsmasq</code>."
+T_REBOOT_CONFIRM="⚠️ Isso vai reiniciar o roteador e derrubar a rede por cerca de 1 minuto.
+Envie /reboot confirm para continuar."
+T_REBOOT_RUNNING="🔄 Reiniciando agora... o bot voltará em breve.
+Envie /status em um minuto para confirmar."
+
 I18N_COMMANDS='start|Mostrar ajuda e comandos disponíveis
 devices|Listar dispositivos conectados
 status|Status do roteador (CPU, RAM, uptime)
@@ -66,5 +75,7 @@ unlimit|Remover limite de velocidade (MAC)
 update|Verificar atualizações (use confirm para aplicar)
 rollback|Restaurar versão anterior (use confirm para aplicar)
 fix|Reparar firewall e bloqueios
+restartdns|Reiniciar cache de DNS (dnsmasq)
+reboot|Reiniciar o roteador (use confirm para aplicar)
 lang|Alterar idioma do bot (en ou pt)
 help|Mostrar esta mensagem'

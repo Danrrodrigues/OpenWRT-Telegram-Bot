@@ -1,7 +1,7 @@
 #!/bin/sh
 # OpenWRT Telegram Bot — main entry point
 
-VERSION="0.3.7"
+VERSION="0.3.8"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -21,6 +21,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "${SCRIPT_DIR}/modules/devices.sh"
 # shellcheck source=modules/firewall.sh
 . "${SCRIPT_DIR}/modules/firewall.sh"
+# shellcheck source=modules/system.sh
+. "${SCRIPT_DIR}/modules/system.sh"
 # shellcheck source=modules/bandwidth.sh
 . "${SCRIPT_DIR}/modules/bandwidth.sh"
 # shellcheck source=modules/updater.sh
@@ -128,6 +130,12 @@ _bot_dispatch() {
         /fix)
             firewall_fix "$chat_id"
             ;;
+        /restartdns)
+            system_restartdns "$chat_id"
+            ;;
+        /reboot)
+            system_reboot "$chat_id" "$args"
+            ;;
         /lang)
             lang_set "$chat_id" "$args"
             ;;
@@ -162,6 +170,8 @@ _bot_send_help() {
 /update — Check for updates (add <i>confirm</i> to apply)
 /rollback — Restore previous version (add <i>confirm</i> to apply)
 /fix — Repair firewall/blocklist setup
+/restartdns — Restart DNS cache (dnsmasq)
+/reboot — Reboot the router (add confirm to apply)
 
 /lang en|pt — Change bot language
 /help — Show this message"
