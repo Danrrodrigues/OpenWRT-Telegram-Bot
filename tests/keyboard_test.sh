@@ -94,6 +94,12 @@ test_build_escapes_quotes() {
     assert_contains "$json" '\"Phone\"' "label quotes are escaped"
 }
 
+test_build_label_containing_pipe_keeps_callback_data_intact() {
+    local json
+    json=$(keyboard_build_json 'Kids|Tablet|kick:aa:bb:cc:dd:ee:ff')
+    assert_equals "$json" '[[{"text":"Kids|Tablet","callback_data":"kick:aa:bb:cc:dd:ee:ff"}]]' "label with a pipe (e.g. a /name-set hostname) must not corrupt callback_data"
+}
+
 # ---- telegram_send_keyboard ----
 
 test_send_keyboard_posts_inline_keyboard() {
@@ -129,6 +135,7 @@ test_answer_callback_posts_to_endpoint() {
 run_test "keyboard: single button row"            test_build_single_button
 run_test "keyboard: multiple button rows"          test_build_multiple_buttons
 run_test "keyboard: escapes quotes in labels"      test_build_escapes_quotes
+run_test "keyboard: label with pipe keeps data intact" test_build_label_containing_pipe_keeps_callback_data_intact
 run_test "send_keyboard: encodes inline_keyboard"  test_send_keyboard_posts_inline_keyboard
 run_test "send_keyboard: fails without token"      test_send_keyboard_fails_without_token
 run_test "edit_message: calls correct endpoint"    test_edit_message_posts_to_endpoint

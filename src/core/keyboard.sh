@@ -8,15 +8,18 @@ _keyboard_json_escape() {
 }
 
 # Build an inline_keyboard JSON array, one button per row, from
-# "label|callback_data" arguments.
+# "label|callback_data" arguments. Split on the LAST "|", not the first —
+# labels come from user-controlled device names (/name allows any
+# character, including "|"), while callback_data is always one of our own
+# "<command>:<mac>" / "cancel:noop" strings that never contains a "|".
 # Usage: keyboard_build_json "label1|data1" "label2|data2" ...
 keyboard_build_json() {
     local json sep arg label data
     json='['
     sep=''
     for arg in "$@"; do
-        label=$(_keyboard_json_escape "${arg%%|*}")
-        data=$(_keyboard_json_escape "${arg#*|}")
+        label=$(_keyboard_json_escape "${arg%|*}")
+        data=$(_keyboard_json_escape "${arg##*|}")
         json="${json}${sep}[{\"text\":\"${label}\",\"callback_data\":\"${data}\"}]"
         sep=','
     done
