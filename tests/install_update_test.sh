@@ -117,6 +117,8 @@ EOF
     assert_file_exists "$install_dir/lang/pt.sh" "lang files should be copied" || return 1
     assert_file_exists "$install_dir/modules/lang.sh" "modules/lang.sh should be copied" || return 1
     assert_file_exists "$install_dir/modules/system.sh" "modules/system.sh should be copied" || return 1
+    assert_file_exists "$install_dir/core/keyboard.sh" "core/keyboard.sh should be copied" || return 1
+    assert_file_exists "$install_dir/core/session.sh" "core/session.sh should be copied" || return 1
     assert_contains "$(cat "$install_dir/bot.sh")" "$CURRENT_VERSION" "bot.sh should be the new version" || return 1
     assert_contains "$(cat "$log")" "restart" "service should be restarted" || return 1
     assert_contains "$(cat "$log")" "copied-before-restart" "copy must happen before restart" || return 1

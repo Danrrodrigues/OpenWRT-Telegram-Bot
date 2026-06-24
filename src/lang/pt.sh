@@ -60,6 +60,20 @@ T_REBOOT_CONFIRM="⚠️ Isso vai reiniciar o roteador e derrubar a rede por cer
 Envie /reboot confirm para continuar."
 T_REBOOT_RUNNING="🔄 Reiniciando agora... o bot voltará em breve.
 Envie /status em um minuto para confirmar."
+T_RESTARTDNS_CONFIRM="Isso vai reiniciar o cache de DNS (dnsmasq)."
+
+# --- botões inline (confirmar/cancelar, seleção de dispositivo) ---
+T_BTN_CONFIRM="✅ Confirmar"
+T_BTN_CANCEL="❌ Cancelar"
+T_CANCELLED="Cancelado."
+T_KICK_PICK="Escolha um dispositivo para desconectar:"
+T_BLOCK_PICK="Escolha um dispositivo para bloquear:"
+T_UNBLOCK_PICK="Escolha um dispositivo para desbloquear:"
+T_WAKE_PICK="Escolha um dispositivo para acordar:"
+T_NAME_PICK="Escolha um dispositivo para nomear:"
+T_LIMIT_PICK="Escolha um dispositivo para limitar:"
+T_LIMIT_PROMPT="Envie o limite de velocidade como <code>&lt;down Mbps&gt; &lt;up Mbps&gt;</code>, ex.: <code>10 5</code>."
+T_NAME_PROMPT="Envie o novo nome para este dispositivo."
 
 I18N_COMMANDS='start|Mostrar ajuda e comandos disponíveis
 devices|Listar dispositivos conectados

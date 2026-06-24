@@ -113,6 +113,8 @@ Veja o guia completo em [docs/installation.md](docs/installation.md).
 | `/reboot` | Reinicia o roteador (`/reboot confirm` para aplicar) |
 | `/help` | Mostra todos os comandos |
 
+> Dica: chame `/kick`, `/block`, `/unblock`, `/wake`, `/name`, `/limit`, `/reboot`, `/update`, `/rollback` ou `/restartdns` sem argumentos para receber botões interativos (seleção de dispositivo ou confirmar/cancelar) em vez de digitar o comando completo.
+
 Exemplo:
 
 ```sh
@@ -198,6 +200,7 @@ Veja todas as opções em [docs/configuration.md](docs/configuration.md).
 
 ## Mudancas Recentes
 
+- `v0.4.0` — Adiciona botões interativos (inline keyboard) no Telegram: confirmar/cancelar para `/reboot`, `/update`, `/rollback`, `/restartdns`; seleção de dispositivo em botões para `/kick`, `/block`, `/unblock`, `/wake` quando chamados sem destino; e um fluxo guiado em duas etapas para `/limit`/`/name` (escolher o dispositivo, depois responder com o valor). Todos os comandos de texto existentes continuam funcionando sem alteração.
 - `v0.3.8` — Adiciona `/restartdns` para reiniciar o cache de DNS do dnsmasq e `/reboot confirm` para reiniciar o roteador remotamente via Telegram.
 - `v0.3.7` — Adiciona `/wake <MAC ou IP>` para Wake-on-LAN via `etherwake` em `br-lan`, incluindo resolução de MAC por lease DHCP, entradas no menu de comandos do Telegram e documentação.
 - `v0.3.1` — Corrige o `/update` e o `/rollback` remotos que abortavam no meio: o atualizador rodava como filho do serviço do bot, então reiniciar o serviço matava o próprio atualizador antes de terminar, deixando o bot parado e atualizado pela metade. Agora a atualização copia os arquivos antes de reiniciar e roda desacoplada da árvore de processos do serviço (`setsid`).

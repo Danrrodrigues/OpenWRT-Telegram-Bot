@@ -12,11 +12,20 @@ VERSION="0.2.2"
 BOT_CHAT_IDS="12345"
 
 MESSAGES=""
+KEYBOARDS=""
 
 telegram_send() {
     local chat_id="$1"
     local text="$2"
     MESSAGES="${MESSAGES}${chat_id}|${text}
+"
+}
+
+telegram_send_keyboard() {
+    local chat_id="$1"
+    local text="$2"
+    shift 2
+    KEYBOARDS="${KEYBOARDS}${chat_id}|${text}|$*
 "
 }
 
@@ -42,6 +51,8 @@ Current: <code>%s</code>
 
 Send /rollback confirm to restore."
 T_ROLLBACK_RUNNING="Restoring version <code>%s</code>... the bot will restart shortly."
+T_BTN_CONFIRM="Confirm"
+T_BTN_CANCEL="Cancel"
 
 log_info()  { :; }
 log_error() { :; }
@@ -126,6 +137,7 @@ run_test() {
     local name="$1"
     shift
     MESSAGES=""
+    KEYBOARDS=""
     _RESTART_CALLED=0
     if "$@"; then
         printf 'PASS: %s\n' "$name"
@@ -146,16 +158,16 @@ test_already_up_to_date() {
 test_update_available() {
     _REMOTE_VERSION_MOCK="0.3.0"
     updater_check "12345" ""
-    assert_contains "$MESSAGES" "0.2.2" "should show current version" || return 1
-    assert_contains "$MESSAGES" "0.3.0" "should show remote version" || return 1
-    assert_contains "$MESSAGES" "confirm" "should prompt for confirmation" || return 1
+    assert_contains "$KEYBOARDS" "0.2.2" "should show current version" || return 1
+    assert_contains "$KEYBOARDS" "0.3.0" "should show remote version" || return 1
+    assert_contains "$KEYBOARDS" "update:confirm" "should offer a confirm button" || return 1
 }
 
 test_network_failure() {
     _REMOTE_VERSION_MOCK=""
     updater_check "12345" ""
     assert_contains "$MESSAGES" "internet" "should mention internet connectivity" || return 1
-    assert_not_contains "$MESSAGES" "confirm" "should not prompt to update when offline" || return 1
+    assert_equals "$KEYBOARDS" "" "should not prompt to update when offline"
 }
 
 test_update_confirm_sends_in_progress_message() {
@@ -172,15 +184,15 @@ test_rollback_no_backup() {
     rm -f "$UPDATER_BACKUP_VERSION_FILE"
     updater_rollback "12345" ""
     assert_contains "$MESSAGES" "backup" "should mention no backup available" || return 1
-    assert_not_contains "$MESSAGES" "confirm" "should not prompt when no backup exists" || return 1
+    assert_equals "$KEYBOARDS" "" "should not prompt when no backup exists"
 }
 
 test_rollback_shows_versions() {
     echo "0.2.1" > "$UPDATER_BACKUP_VERSION_FILE"
     updater_rollback "12345" ""
-    assert_contains "$MESSAGES" "0.2.1" "should show backup version" || return 1
-    assert_contains "$MESSAGES" "0.2.2" "should show current version" || return 1
-    assert_contains "$MESSAGES" "confirm" "should prompt for confirmation" || return 1
+    assert_contains "$KEYBOARDS" "0.2.1" "should show backup version" || return 1
+    assert_contains "$KEYBOARDS" "0.2.2" "should show current version" || return 1
+    assert_contains "$KEYBOARDS" "rollback:confirm" "should offer a confirm button" || return 1
 }
 
 test_rollback_confirm_sends_restore_message() {

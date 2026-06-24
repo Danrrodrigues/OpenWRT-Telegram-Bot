@@ -7,13 +7,25 @@ TELEGRAM_TIMEOUT=30
 UPDATES_FILE="/tmp/telegram-bot-updates.json"
 SEND_RESPONSE_FILE="/tmp/telegram-bot-send-response.json"
 
-# Send an HTML-formatted message to a chat
+# Send an HTML-formatted message to a chat.
+# If TELEGRAM_REDIRECT_CHAT_ID matches chat_id, the message is sent by
+# editing TELEGRAM_REDIRECT_MESSAGE_ID instead — used by the inline-keyboard
+# callback dispatcher so existing handlers can update the original message
+# (removing its buttons) without any handler code being keyboard-aware.
 # Usage: telegram_send <chat_id> <text>
 telegram_send() {
     local chat_id="$1"
     local text="$2"
-    local ok desc
+    local ok desc redirect_message_id
     [ -z "$BOT_TOKEN" ] && { log_error "BOT_TOKEN not set"; return 1; }
+
+    if [ -n "${TELEGRAM_REDIRECT_CHAT_ID:-}" ] && [ "$chat_id" = "$TELEGRAM_REDIRECT_CHAT_ID" ]; then
+        redirect_message_id="$TELEGRAM_REDIRECT_MESSAGE_ID"
+        TELEGRAM_REDIRECT_CHAT_ID=""
+        TELEGRAM_REDIRECT_MESSAGE_ID=""
+        telegram_edit_message "$chat_id" "$redirect_message_id" "$text"
+        return $?
+    fi
 
     curl -s --max-time 10 \
         -X POST "${TELEGRAM_API}${BOT_TOKEN}/sendMessage" \
@@ -75,7 +87,10 @@ telegram_get_updates() {
     local offset="${1:-0}"
     [ -z "$BOT_TOKEN" ] && { log_error "BOT_TOKEN not set"; return 1; }
     curl -s --max-time $((TELEGRAM_TIMEOUT + 5)) \
-        "${TELEGRAM_API}${BOT_TOKEN}/getUpdates?offset=${offset}&timeout=${TELEGRAM_TIMEOUT}&allowed_updates=message" \
+        -X POST "${TELEGRAM_API}${BOT_TOKEN}/getUpdates" \
+        -d "offset=${offset}" \
+        -d "timeout=${TELEGRAM_TIMEOUT}" \
+        --data-urlencode 'allowed_updates=["message","callback_query"]' \
         > "$UPDATES_FILE" 2>/dev/null
 
     # Count by extracting all update_ids (one per line)

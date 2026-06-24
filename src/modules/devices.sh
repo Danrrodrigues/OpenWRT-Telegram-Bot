@@ -55,7 +55,7 @@ devices_kick() {
     local mac kicked iface hostname
 
     if [ -z "$target" ]; then
-        telegram_send "$chat_id" "Usage: <code>/kick &lt;MAC or IP&gt;</code>"
+        _devices_send_picker "$chat_id" "${T_KICK_PICK:-Pick a device to kick:}" "kick"
         return
     fi
 
@@ -96,7 +96,7 @@ devices_wake() {
     wake_iface="${WAKE_INTERFACE:-br-lan}"
 
     if [ -z "$target" ]; then
-        telegram_send "$chat_id" "${T_WAKE_USAGE:-Usage: <code>/wake &lt;MAC or IP&gt;</code>}"
+        _devices_send_picker "$chat_id" "${T_WAKE_PICK:-Pick a device to wake:}" "wake"
         return
     fi
 
@@ -133,8 +133,7 @@ devices_block() {
     local mac iface hostname
 
     if [ -z "$target" ]; then
-        telegram_send "$chat_id" "Usage: <code>/block &lt;MAC&gt;</code>
-Example: <code>/block AA:BB:CC:DD:EE:FF</code>"
+        _devices_send_picker "$chat_id" "${T_BLOCK_PICK:-Pick a device to block:}" "block"
         return
     fi
 
@@ -169,6 +168,11 @@ devices_set_name() {
     local args="$2"
     local mac hostname escaped_hostname
 
+    if [ -z "$args" ]; then
+        _devices_send_picker "$chat_id" "${T_NAME_PICK:-Pick a device to name:}" "namepick"
+        return
+    fi
+
     mac=$(printf '%s\n' "$args" | awk '{print $1}')
     hostname=$(printf '%s\n' "$args" | sed 's/^[[:space:]]*//; s/^[^[:space:]]*[[:space:]]*//; s/[[:space:]]*$//')
 
@@ -195,7 +199,7 @@ devices_unblock() {
     local target="$2"
 
     if [ -z "$target" ]; then
-        telegram_send "$chat_id" "Usage: <code>/unblock &lt;MAC&gt;</code>"
+        _devices_send_blocked_picker "$chat_id" "${T_UNBLOCK_PICK:-Pick a device to unblock:}"
         return
     fi
 
@@ -274,4 +278,57 @@ _devices_resolve_mac() {
 
 _devices_hostname() {
     device_identity_hostname "$1"
+}
+
+# Send a device-picker keyboard built from current DHCP leases, one button
+# per device (label = hostname, callback_data="<command>:<mac>"), plus a
+# trailing Cancel button. Used when kick/block/wake are called with no
+# target.
+_devices_send_picker() {
+    local chat_id="$1"
+    local prompt="$2"
+    local command="$3"
+    local mac hostname line
+
+    set --
+    while IFS= read -r line; do
+        [ -z "$line" ] && continue
+        mac=$(printf '%s\n' "$line" | awk '{print $2}')
+        hostname=$(device_identity_hostname "$mac")
+        set -- "$@" "${hostname}|${command}:${mac}"
+    done < "$LEASES_FILE"
+
+    if [ "$#" -eq 0 ]; then
+        telegram_send "$chat_id" "No devices found in DHCP leases."
+        return
+    fi
+
+    # shellcheck disable=SC2154
+    telegram_send_keyboard "$chat_id" "$prompt" "$@" "${T_BTN_CANCEL}|cancel:noop"
+}
+
+# Send a picker keyboard built from the currently blocked MAC list (not DHCP
+# leases — a blocked device usually has no active lease). Used by /unblock
+# when called with no target.
+_devices_send_blocked_picker() {
+    local chat_id="$1"
+    local prompt="$2"
+    local mac hostname
+
+    set --
+    while IFS= read -r mac; do
+        [ -z "$mac" ] && continue
+        hostname=$(device_identity_hostname "$mac")
+        set -- "$@" "${hostname}|unblock:${mac}"
+    done <<EOF
+$(config_get_list "blocked")
+EOF
+
+    if [ "$#" -eq 0 ]; then
+        telegram_send "$chat_id" "No blocked devices."
+        return
+    fi
+
+    # shellcheck disable=SC2154
+    telegram_send_keyboard "$chat_id" "$prompt" "$@" "${T_BTN_CANCEL}|cancel:noop"
 }

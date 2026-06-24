@@ -21,6 +21,9 @@ WIFI_MAC_SSID=""
 IW_INTERFACES=""
 HOSTAPD_RESULT="OK"
 ETHERWAKE_RC=0
+BLOCKED_MACS=""
+
+T_BTN_CANCEL="Cancel"
 
 # --- mocks ---
 
@@ -28,9 +31,17 @@ telegram_send() {
     printf '%s|%s\n' "$1" "$2" >> "$MESSAGES_FILE"
 }
 
+telegram_send_keyboard() {
+    local chat_id="$1"
+    local text="$2"
+    shift 2
+    printf '%s|%s|%s\n' "$chat_id" "$text" "$*" >> "$MESSAGES_FILE"
+}
+
 log_info() { :; }
 config_add_list() { :; }
 config_del_list() { :; }
+config_get_list() { printf '%s' "$BLOCKED_MACS"; }
 
 uci() { return 1; }
 
@@ -261,11 +272,14 @@ EOF
 
 # --- devices_kick ---
 
-test_kick_no_target_shows_usage() {
+test_kick_no_target_shows_device_picker() {
+    write_leases <<'EOF'
+1717420000 aa:bb:cc:dd:ee:ff 192.168.1.10 Phone *
+EOF
     reset_output
     devices_kick "123" ""
     messages=$(read_messages)
-    assert_contains "$messages" "Usage:" "missing target should return usage message"
+    assert_contains "$messages" "kick:aa:bb:cc:dd:ee:ff" "missing target should offer a device picker keyboard"
 }
 
 test_kick_unknown_ip_shows_not_found() {
@@ -333,12 +347,15 @@ EOF
 
 # --- devices_wake ---
 
-test_wake_no_target_shows_usage() {
+test_wake_no_target_shows_device_picker() {
+    write_leases <<'EOF'
+1717420000 aa:bb:cc:dd:ee:ff 192.168.1.10 Phone *
+EOF
     reset_output
     uninstall_etherwake_mock
     devices_wake "123" ""
     messages=$(read_messages)
-    assert_contains "$messages" "Usage: <code>/wake &lt;MAC or IP&gt;</code>" "missing target should return wake usage"
+    assert_contains "$messages" "wake:aa:bb:cc:dd:ee:ff" "missing target should offer a device picker keyboard"
 }
 
 test_wake_unknown_ip_shows_not_found() {
@@ -402,6 +419,34 @@ EOF
     assert_not_contains "$messages" "Wake packet sent" "etherwake failure should not claim success"
 }
 
+# --- devices_block / devices_unblock ---
+
+test_block_no_target_shows_device_picker() {
+    write_leases <<'EOF'
+1717420000 aa:bb:cc:dd:ee:ff 192.168.1.10 Phone *
+EOF
+    reset_output
+    devices_block "123" ""
+    messages=$(read_messages)
+    assert_contains "$messages" "block:aa:bb:cc:dd:ee:ff" "missing target should offer a device picker keyboard"
+}
+
+test_unblock_no_target_shows_blocked_picker() {
+    BLOCKED_MACS="aa:bb:cc:dd:ee:ff"
+    reset_output
+    devices_unblock "123" ""
+    messages=$(read_messages)
+    assert_contains "$messages" "unblock:aa:bb:cc:dd:ee:ff" "missing target should offer a picker of currently blocked devices"
+}
+
+test_unblock_no_target_no_blocked_devices() {
+    BLOCKED_MACS=""
+    reset_output
+    devices_unblock "123" ""
+    messages=$(read_messages)
+    assert_contains "$messages" "No blocked devices" "no blocked devices should say so instead of an empty keyboard"
+}
+
 # --- run ---
 
 FAILURES=0
@@ -420,19 +465,23 @@ run_test "list: SSID HTML metacharacters are escaped"                  test_list
 run_test "list: WiFi devices appear before offline"                    test_list_wifi_devices_appear_before_offline
 run_test "list: shows IP and MAC for each device"                      test_list_shows_ip_and_mac_for_each_device
 
-run_test "kick: missing target shows usage"                 test_kick_no_target_shows_usage
+run_test "kick: missing target shows device picker"         test_kick_no_target_shows_device_picker
 run_test "kick: unknown IP shows not-found error"           test_kick_unknown_ip_shows_not_found
 run_test "kick: offline device warns not on Wi-Fi"          test_kick_device_not_on_wifi_shows_warning
 run_test "kick: kicking by IP for offline device warns"     test_kick_device_by_ip_not_on_wifi_shows_warning
 run_test "kick: Wi-Fi device deauths successfully"          test_kick_wifi_device_deauths_successfully
 run_test "kick: deauth failure shows could-not-kick"        test_kick_wifi_device_deauth_failure_shows_warning
 
-run_test "wake: missing target shows usage"                 test_wake_no_target_shows_usage
+run_test "wake: missing target shows device picker"         test_wake_no_target_shows_device_picker
 run_test "wake: unknown IP shows not-found error"           test_wake_unknown_ip_shows_not_found
 run_test "wake: missing etherwake shows install hint"       test_wake_missing_etherwake_shows_install_hint
 run_test "wake: MAC sends packet on br-lan"                 test_wake_by_mac_sends_packet_on_br_lan
 run_test "wake: IP resolves MAC before sending"             test_wake_by_ip_resolves_mac_before_sending
 run_test "wake: etherwake failure shows error"              test_wake_etherwake_failure_shows_error
+
+run_test "block: missing target shows device picker"        test_block_no_target_shows_device_picker
+run_test "unblock: missing target shows blocked picker"     test_unblock_no_target_shows_blocked_picker
+run_test "unblock: missing target, none blocked"            test_unblock_no_target_no_blocked_devices
 
 rm -rf "$TEST_TMP"
 

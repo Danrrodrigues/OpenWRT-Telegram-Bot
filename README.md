@@ -111,6 +111,8 @@ See [docs/installation.md](docs/installation.md) for the full guide.
 | `/reboot` | Reboot the router (`/reboot confirm` to apply) |
 | `/help` | Show all commands |
 
+> Tip: call `/kick`, `/block`, `/unblock`, `/wake`, `/name`, `/limit`, `/reboot`, `/update`, `/rollback` or `/restartdns` with no arguments to get tappable inline buttons (device picker or confirm/cancel) instead of typing the full command.
+
 Example:
 
 ```sh
@@ -196,6 +198,7 @@ See [docs/configuration.md](docs/configuration.md) for all options.
 
 ## Changelog
 
+- `v0.4.0` — Added interactive Telegram inline-keyboard buttons: confirm/cancel buttons for `/reboot`, `/update`, `/rollback`, `/restartdns`; device-picker buttons for `/kick`, `/block`, `/unblock`, `/wake` when called with no target; and a guided two-step flow for `/limit`/`/name` (pick a device, then reply with the value). All existing text-only commands keep working unchanged.
 - `v0.3.8` — Added `/restartdns` to restart the dnsmasq DNS cache and `/reboot confirm` to reboot the router remotely via Telegram.
 - `v0.3.7` — Added `/wake <MAC or IP>` for Wake-on-LAN via `etherwake` on `br-lan`, including DHCP lease MAC resolution, Telegram command menu entries, and documentation.
 - `v0.3.1` — Fixed remote `/update` and `/rollback` aborting mid-way: the updater ran as a child of the bot service, so restarting the service killed the updater itself before it finished, leaving the bot stopped and half-updated. The update now copies files before restarting and runs detached from the service process tree (`setsid`).

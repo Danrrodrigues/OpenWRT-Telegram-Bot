@@ -1,7 +1,7 @@
 #!/bin/sh
 # OpenWRT Telegram Bot — main entry point
 
-VERSION="0.3.8"
+VERSION="0.4.0"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -13,6 +13,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "${SCRIPT_DIR}/core/i18n.sh"
 # shellcheck source=core/telegram.sh
 . "${SCRIPT_DIR}/core/telegram.sh"
+# shellcheck source=core/keyboard.sh
+. "${SCRIPT_DIR}/core/keyboard.sh"
+# shellcheck source=core/session.sh
+. "${SCRIPT_DIR}/core/session.sh"
 # shellcheck source=core/device_identity.sh
 . "${SCRIPT_DIR}/core/device_identity.sh"
 # shellcheck source=modules/monitor.sh
@@ -131,7 +135,7 @@ _bot_dispatch() {
             firewall_fix "$chat_id"
             ;;
         /restartdns)
-            system_restartdns "$chat_id"
+            system_restartdns "$chat_id" "$args"
             ;;
         /reboot)
             system_reboot "$chat_id" "$args"
@@ -174,11 +178,88 @@ _bot_send_help() {
 /reboot — Reboot the router (add confirm to apply)
 
 /lang en|pt — Change bot language
-/help — Show this message"
+/help — Show this message
+
+<i>Tip: call kick/block/unblock/wake/name/limit/reboot/update/rollback/restartdns with no arguments to get tappable buttons instead of typing them out.</i>"
+}
+
+# Handle a button press: acknowledge it, then either resolve it directly
+# (cancel, device-picker for a guided flow) or run the same handler function
+# the equivalent text command would call. TELEGRAM_REDIRECT_* makes that
+# handler's normal telegram_send edit this message instead of sending a new
+# one — see telegram_send in core/telegram.sh.
+_bot_dispatch_callback() {
+    local chat_id="$1"
+    local message_id="$2"
+    local callback_id="$3"
+    local data="$4"
+    local command arg
+
+    command="${data%%:*}"
+    arg="${data#*:}"
+
+    telegram_answer_callback "$callback_id"
+    log_info "bot: callback $command from $chat_id"
+
+    case "$command" in
+        cancel)
+            telegram_edit_message "$chat_id" "$message_id" "$T_CANCELLED"
+            return
+            ;;
+        limitpick)
+            session_set_pending "$chat_id" "limit" "$arg"
+            telegram_edit_message "$chat_id" "$message_id" "$T_LIMIT_PROMPT"
+            return
+            ;;
+        namepick)
+            session_set_pending "$chat_id" "name" "$arg"
+            telegram_edit_message "$chat_id" "$message_id" "$T_NAME_PROMPT"
+            return
+            ;;
+    esac
+
+    TELEGRAM_REDIRECT_CHAT_ID="$chat_id"
+    TELEGRAM_REDIRECT_MESSAGE_ID="$message_id"
+
+    case "$command" in
+        reboot)     system_reboot "$chat_id" "confirm" ;;
+        restartdns) system_restartdns "$chat_id" "confirm" ;;
+        update)     updater_check "$chat_id" "confirm" ;;
+        rollback)   updater_rollback "$chat_id" "confirm" ;;
+        kick)       devices_kick "$chat_id" "$arg" ;;
+        block)      devices_block "$chat_id" "$arg" ;;
+        unblock)    devices_unblock "$chat_id" "$arg" ;;
+        wake)       devices_wake "$chat_id" "$arg" ;;
+        *)          log_warn "bot: unknown callback command $command" ;;
+    esac
+
+    # In case the handler took a path that never called telegram_send, don't
+    # let a stale redirect leak into an unrelated later message.
+    TELEGRAM_REDIRECT_CHAT_ID=""
+    TELEGRAM_REDIRECT_MESSAGE_ID=""
+}
+
+# Resume a guided flow (/limit or /name) once the user replies with the free
+# text a device-picker button asked for.
+_bot_dispatch_pending() {
+    local chat_id="$1"
+    local action="$2"
+    local mac="$3"
+    local text="$4"
+
+    case "$action" in
+        limit)
+            bandwidth_limit "$chat_id" "$mac" "$(echo "$text" | awk '{print $1}')" "$(echo "$text" | awk '{print $2}')"
+            ;;
+        name)
+            devices_set_name "$chat_id" "${mac} ${text}"
+            ;;
+    esac
 }
 
 _bot_process_updates() {
     local offset count i chat_id text last_id
+    local callback_id callback_data message_id pending action mac
     if [ -f "$OFFSET_FILE" ]; then
         read -r offset < "$OFFSET_FILE" || offset=0
     else
@@ -194,12 +275,46 @@ _bot_process_updates() {
 
     i=0
     while [ "$i" -lt "$count" ]; do
+        callback_id=$(telegram_update_field "$i" "callback_query.id")
+
+        if [ -n "$callback_id" ]; then
+            chat_id=$(telegram_update_field "$i" "callback_query.message.chat.id")
+            message_id=$(telegram_update_field "$i" "callback_query.message.message_id")
+            callback_data=$(telegram_update_field "$i" "callback_query.data")
+
+            if [ -n "$chat_id" ] && config_is_authorized "$chat_id"; then
+                _bot_dispatch_callback "$chat_id" "$message_id" "$callback_id" "$callback_data"
+            else
+                log_warn "bot: unauthorized callback chat_id=$chat_id"
+                telegram_answer_callback "$callback_id"
+            fi
+
+            i=$((i + 1))
+            continue
+        fi
+
         chat_id=$(telegram_update_field "$i" "message.chat.id")
         text=$(telegram_update_field "$i" "message.text")
 
         if [ -n "$chat_id" ] && [ -n "$text" ]; then
             if config_is_authorized "$chat_id"; then
-                _bot_dispatch "$chat_id" "$text"
+                case "$text" in
+                    /*)
+                        session_clear_pending "$chat_id"
+                        _bot_dispatch "$chat_id" "$text"
+                        ;;
+                    *)
+                        pending=$(session_get_pending "$chat_id")
+                        if [ -n "$pending" ]; then
+                            session_clear_pending "$chat_id"
+                            action="${pending%%:*}"
+                            mac="${pending#*:}"
+                            _bot_dispatch_pending "$chat_id" "$action" "$mac" "$text"
+                        else
+                            _bot_dispatch "$chat_id" "$text"
+                        fi
+                        ;;
+                esac
             else
                 log_warn "bot: unauthorized chat_id=$chat_id"
             fi

@@ -14,7 +14,12 @@ bandwidth_limit() {
     local up_mbps="$4"
     local mac ip down_kbps up_kbps hostname
 
-    if [ -z "$target" ] || [ -z "$down_mbps" ] || [ -z "$up_mbps" ]; then
+    if [ -z "$target" ]; then
+        _bw_send_picker "$chat_id" "${T_LIMIT_PICK:-Pick a device to limit:}"
+        return
+    fi
+
+    if [ -z "$down_mbps" ] || [ -z "$up_mbps" ]; then
         telegram_send "$chat_id" "Usage: <code>/limit &lt;MAC&gt; &lt;down Mbps&gt; &lt;up Mbps&gt;</code>
 Example: <code>/limit AA:BB:CC:DD:EE:FF 10 5</code>"
         return
@@ -192,4 +197,30 @@ _bw_hostname() {
     name=$(awk -v m="$mac" 'tolower($2)==tolower(m){print $4}' "$LEASES_FILE" 2>/dev/null | head -1)
     [ -z "$name" ] || [ "$name" = "*" ] && name="$mac"
     echo "$name"
+}
+
+# Device-picker keyboard for /limit called with no target. Selecting a
+# device starts the guided flow (see _bot_dispatch_callback's "limitpick"
+# case in bot.sh): the bot then asks for "<down> <up>" as a follow-up
+# message instead of limiting immediately.
+_bw_send_picker() {
+    local chat_id="$1"
+    local prompt="$2"
+    local mac hostname line
+
+    set --
+    while IFS= read -r line; do
+        [ -z "$line" ] && continue
+        mac=$(printf '%s\n' "$line" | awk '{print $2}')
+        hostname=$(_bw_hostname "$mac")
+        set -- "$@" "${hostname}|limitpick:${mac}"
+    done < "$LEASES_FILE"
+
+    if [ "$#" -eq 0 ]; then
+        telegram_send "$chat_id" "No devices found in DHCP leases."
+        return
+    fi
+
+    # shellcheck disable=SC2154
+    telegram_send_keyboard "$chat_id" "$prompt" "$@" "${T_BTN_CANCEL}|cancel:noop"
 }
